@@ -26,7 +26,7 @@ module testbnch_TimingFSM(
     // parameter T_ABAR = 24;
     // parameter T_RTP = 7;
     
-    localparam tCK = 0.75;
+    localparam real tCK = 0.75;
     
     // logic signals for the testbench
     logic clk;
@@ -83,7 +83,7 @@ module testbnch_TimingFSM(
         SRF = 0;
         WR = 0;
         WRA = 0;
-        #tCK;
+        #(tCK * 1.5);
         
         // reset
         reset_n = 1;

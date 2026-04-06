@@ -10,7 +10,7 @@ module testbnch_Bank(
     parameter CHWIDTH = 5;
     
     // time for a clk cycle
-    localparam tCK = 0.75;
+    localparam real tCK = 0.75;
     
     // registers and wire for in and out of Bank module
     logic clk;
