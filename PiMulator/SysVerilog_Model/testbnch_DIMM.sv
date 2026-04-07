@@ -3,7 +3,7 @@
 `define DDR4
 // `define DDR3
 
-// `define RowClone
+`define RowClone
 
 module testbnch_DIMM();
     

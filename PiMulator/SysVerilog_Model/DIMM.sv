@@ -65,10 +65,10 @@ module DIMM // top MEMulator module with DIMM interface
   `endif
   input logic reset_n, // DRAM is active only when this signal is HIGH
   
-  output logic stall//, // signal to stall system while MEMSync in Allocate or WriteBack state
+  output logic stall, // signal to stall system while MEMSync in Allocate or WriteBack state
   
 //  // AXI Port to Synchronize Emulation Memory Cache with Board Memory
-//  input logic sync [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
+ input logic sync [BANKGROUPS-1:0][BANKSPERGROUP-1:0]
 //  /*
 //  * AXI master interface
 //  */
@@ -163,7 +163,7 @@ module DIMM // top MEMulator module with DIMM interface
   
   // Memory Emulation Model Data Sync engines (todo: also model row subarray belonging)
   logic [CHWIDTH-1:0] cRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
-  logic sync [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // TODO: this has to be an input from AXI-2-BoardMemory
+  // logic sync [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // TODO: this has to be an input from AXI-2-BoardMemory
   MEMSyncTop #(.BGWIDTH(BGWIDTH),
   .BANKGROUPS(BANKGROUPS),
   .BAWIDTH(BAWIDTH),
