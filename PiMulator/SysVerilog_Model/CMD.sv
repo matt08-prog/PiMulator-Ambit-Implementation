@@ -33,6 +33,7 @@ module CMD
     input logic [BAWIDTH-1:0] ba,
     input logic [ADDRWIDTH-1:0] A,
     output logic [ADDRWIDTH-1:0] RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
+    output logic [ADDRWIDTH-1:0] SrcRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
     output logic [COLWIDTH-1:0] ColId [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic rd_o_wr [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic [18:0] commands
@@ -80,8 +81,11 @@ module CMD
     // thus keep track of which row is active at each Bank
     always@(posedge clk)
     begin
-        if(ACT) begin // store the active row
-            RowId[bg][ba] <= A;
+        if(ACT) begin 
+            // NEW: Keep track of the previously active row as the source
+            SrcRowId[bg][ba] <= RowId[bg][ba]; 
+            // Update the current active row to the destination
+            RowId[bg][ba] <= A;                
         end
     end
     

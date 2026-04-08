@@ -11,25 +11,25 @@ cModel Technology
 Z0 d/home/matthewroloff/Documents/UCoder/embedded/PIMulator/PIMulator_Assignment_3/PiMulator/PiMulator/SysVerilog_Model
 vBank
 Z1 DXx6 sv_std 3 std 0 22 VYECXdT12H8WgbUP_5Y6:3
-Z2 !s110 1775602554
+Z2 !s110 1775681964
 !i10b 1
-!s100 aiKHALH4oeEJ`fNaI91om3
+!s100 0COFNkSUj54YMEHmFWAmB3
 Z3 !s11b Dg1SIo80bB@j0V0VzS_@n1
-Ij8gHdPHV@[1mR3HJgWOQf3
+IXZ`YfEhNZah9_U079I^jR3
 Z4 VDg1SIo80bB@j0V0VzS_@n1
 S1
 R0
-Z5 w1775499070
+w1775605047
 8Bank.sv
 FBank.sv
-!i122 2
-L0 11 25
-Z6 OV;L;2020.1;71
+!i122 0
+L0 3 33
+Z5 OV;L;2020.1;71
 r1
 !s85 0
 31
-Z7 !s108 1775602554.000000
-!s107 testbnch_TimingFSM.sv|testbnch_RefInterleaving.sv|testbnch_MEMSyncTop.sv|testbnch_MEMSync.sv|testbnch_DIMM.sv|testbnch_Chip.sv|testbnch_CMD.sv|testbnch_BankInterleaving.sv|testbnch_Bank.sv|memtiming.sv|bank_array.sv|WrappedDIMM.sv|TimingFSM.sv|MEMSyncTop.sv|MEMSync.sv|DIMM.sv|Chip.sv|CMD.sv|BankGroup.sv|Bank.sv|
+Z6 !s108 1775681964.000000
+Z7 !s107 testbnch_TimingFSM.sv|testbnch_RefInterleaving.sv|testbnch_MEMSyncTop.sv|testbnch_MEMSync.sv|testbnch_DIMM.sv|testbnch_Chip.sv|testbnch_CMD.sv|testbnch_BankInterleaving.sv|testbnch_Bank.sv|memtiming.sv|bank_array.sv|WrappedDIMM.sv|TimingFSM.sv|MEMSyncTop.sv|MEMSync.sv|DIMM.sv|Chip.sv|CMD.sv|BankGroup.sv|Bank.sv|
 Z8 !s90 -reportprogress|300|Bank.sv|BankGroup.sv|CMD.sv|Chip.sv|DIMM.sv|MEMSync.sv|MEMSyncTop.sv|TimingFSM.sv|WrappedDIMM.sv|bank_array.sv|memtiming.sv|testbnch_Bank.sv|testbnch_BankInterleaving.sv|testbnch_CMD.sv|testbnch_Chip.sv|testbnch_DIMM.sv|testbnch_MEMSync.sv|testbnch_MEMSyncTop.sv|testbnch_RefInterleaving.sv|testbnch_TimingFSM.sv|
 !i113 1
 Z9 tCvgOpt 0
@@ -38,23 +38,23 @@ vbank_array
 R1
 R2
 !i10b 1
-!s100 NgDj950E[e8d>VC>ic=Pk1
+!s100 n?B;XoE7YX4gWl@Bga1K61
 R3
-IQ<mYiUJRKl7o7RHTal_G02
+IX`zZ8fCjiI:<<_9niFIO^1
 R4
 S1
 R0
-R5
+w1775605034
 8bank_array.sv
 Fbank_array.sv
-!i122 2
-L0 6 37
-R6
+!i122 0
+L0 3 42
+R5
 r1
 !s85 0
 31
+R6
 R7
-Z10 !s107 testbnch_TimingFSM.sv|testbnch_RefInterleaving.sv|testbnch_MEMSyncTop.sv|testbnch_MEMSync.sv|testbnch_DIMM.sv|testbnch_Chip.sv|testbnch_CMD.sv|testbnch_BankInterleaving.sv|testbnch_Bank.sv|memtiming.sv|bank_array.sv|WrappedDIMM.sv|TimingFSM.sv|MEMSyncTop.sv|MEMSync.sv|DIMM.sv|Chip.sv|CMD.sv|BankGroup.sv|Bank.sv|
 R8
 !i113 1
 R9
@@ -62,23 +62,23 @@ vBankGroup
 R1
 R2
 !i10b 1
-!s100 56MfV2PkFaPai?DVF4]ln1
+!s100 Pl>6zJ=o4`9R13?zI8R@Z0
 R3
-IaY[gV4BAolU;fPXi8I_lY1
+I[baaG_BccIFCDWhR3H@c93
 R4
 S1
 R0
-R5
+w1775678233
 8BankGroup.sv
 FBankGroup.sv
-!i122 2
-L0 5 37
-R6
+!i122 0
+L0 5 41
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -87,23 +87,23 @@ vChip
 R1
 R2
 !i10b 1
-!s100 Pf>M43BN5znL6Q<oKN?GW1
+!s100 US2oBLI;6j^5K4NFHRSe33
 R3
-I]^d0FelT<M1XKji0ozlB[1
+I@?TGhj`zm^ZW<A^Q:iV7B1
 R4
 S1
 R0
-R5
+w1775678216
 8Chip.sv
 FChip.sv
-!i122 2
-L0 13 44
-R6
+!i122 0
+L0 13 48
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -112,23 +112,23 @@ vCMD
 R1
 R2
 !i10b 1
-!s100 Jo>IK45fVF?VJ3]Ml15DG0
+!s100 18Rk;QWVSm?o:aV@5[@Si1
 R3
-IT8j6e^XzN4Jj9FW0cM41C3
+I6>kG[@ReNiT[Ve`:zH^GV1
 R4
 S1
 R0
-R5
+w1775605142
 8CMD.sv
 FCMD.sv
-!i122 2
-L0 10 125
-R6
+!i122 0
+L0 10 129
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -137,23 +137,23 @@ vDIMM
 R1
 R2
 !i10b 1
-!s100 gGDBNV]6kcgkK50Ek@7QK1
+!s100 J^hfkReBLWEk[ke55WmX_1
 R3
-I6:Vg_^`R0PIAo7P=769Qf1
+IGma[dWD_Afmmon7P1Y8_W0
 R4
 S1
 R0
-w1775602529
+w1775677542
 8DIMM.sv
 FDIMM.sv
-!i122 2
-L0 7 241
-R6
+!i122 0
+L0 7 257
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -162,23 +162,23 @@ vMEMSync
 R1
 R2
 !i10b 1
-!s100 9GzzF65_fdAEZ^kQK]n_]1
+!s100 JEYPZS@AB;a^PViO^BZ>Q3
 R3
-I0N[FL]6>7iPbi4L^S`JXk1
+I@740gaNi;acA6mReYnbbi1
 R4
 S1
 R0
-R5
+w1775679170
 8MEMSync.sv
 FMEMSync.sv
-!i122 2
-L0 4 181
-R6
+!i122 0
+L0 4 192
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -187,23 +187,23 @@ vMEMSyncTop
 R1
 R2
 !i10b 1
-!s100 DV=E^4ki8B^G:OP4;2[MT3
+!s100 NJzJC<g^mI3B<Go8]AChb2
 R3
-ICV@LIam6Pn=Hf]>U^Bbba3
+Ik2j6]<TA4NcbgWEI`W7FH1
 R4
 S1
 R0
-R5
+w1775677647
 8MEMSyncTop.sv
 FMEMSyncTop.sv
-!i122 2
-L0 4 53
-R6
+!i122 0
+L0 4 61
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -221,14 +221,14 @@ R0
 w1775515777
 8memtiming.sv
 Fmemtiming.sv
-!i122 2
+!i122 0
 L0 3 367
-R6
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -245,14 +245,14 @@ R0
 w1775504209
 8testbnch_Bank.sv
 Ftestbnch_Bank.sv
-!i122 2
+!i122 0
 L0 4 81
-R6
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -267,17 +267,17 @@ IUQ3>:l^1J228VThAjeGVo1
 R4
 S1
 R0
-R5
+Z10 w1775499070
 8testbnch_BankInterleaving.sv
 Ftestbnch_BankInterleaving.sv
-!i122 2
+!i122 0
 L0 6 212
-R6
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -292,17 +292,17 @@ I:o2^Cb4E`D>F`0hH:[fn]3
 R4
 S1
 R0
-R5
+R10
 8testbnch_Chip.sv
 Ftestbnch_Chip.sv
-!i122 2
+!i122 0
 L0 3 93
-R6
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -317,17 +317,17 @@ IEWkh6gJn5@PgcNXOlU;GT1
 R4
 S1
 R0
-R5
+R10
 8testbnch_CMD.sv
 Ftestbnch_CMD.sv
-!i122 2
+!i122 0
 L0 7 124
-R6
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -336,23 +336,23 @@ vtestbnch_DIMM
 R1
 R2
 !i10b 1
-!s100 4E`Bg@onN8aZZ4CB5n;Y:2
+!s100 z`z__FV5Eg?aBG0:LF[T02
 R3
-IYPAok[^dG52VMgEJS:QFO3
+Iz2]S[j3W=`i4Mj1Fa_F]T1
 R4
 S1
 R0
-w1775601889
+w1775681954
 8testbnch_DIMM.sv
 Ftestbnch_DIMM.sv
-!i122 2
-L0 8 233
-R6
+!i122 0
+L0 8 269
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -367,17 +367,17 @@ I[Z1LF^WTnLFGQPz8XDH^]1
 R4
 S1
 R0
-R5
+R10
 8testbnch_MEMSync.sv
 Ftestbnch_MEMSync.sv
-!i122 2
+!i122 0
 L0 3 147
-R6
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -392,17 +392,17 @@ I3c5U82O=nSH4FGzn1hLUK3
 R4
 S1
 R0
-R5
+R10
 8testbnch_MEMSyncTop.sv
 Ftestbnch_MEMSyncTop.sv
-!i122 2
+!i122 0
 L0 3 117
-R6
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -417,17 +417,17 @@ Im90ZZ^A4g7`H35iCmg@8k1
 R4
 S1
 R0
-R5
+R10
 8testbnch_RefInterleaving.sv
 Ftestbnch_RefInterleaving.sv
-!i122 2
+!i122 0
 L0 6 211
-R6
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -445,14 +445,14 @@ R0
 w1775514329
 8testbnch_TimingFSM.sv
 Ftestbnch_TimingFSM.sv
-!i122 2
+!i122 0
 L0 10 241
-R6
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
@@ -467,39 +467,39 @@ Ie16[N041SQ7WmdkjSz3Vg2
 R4
 S1
 R0
-R5
+R10
 8TimingFSM.sv
 FTimingFSM.sv
-!i122 2
+!i122 0
 L0 4 101
-R6
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9
 n@timing@f@s@m
 vtristate
-!s110 1775602061
+R2
 !i10b 1
 !s100 8FB5[b[5VPoTbSoN2Pza13
 R3
 Ib>al8d@NlHSL=Q]]LNE@>0
 R4
 R0
-R5
+R10
 8tristate.v
 Ftristate.v
 !i122 1
 L0 4 11
-R6
+R5
 r1
 !s85 0
 31
-!s108 1775602061.000000
+R6
 !s107 tristate.v|
 !s90 -reportprogress|300|tristate.v|
 !i113 1
@@ -514,17 +514,17 @@ IVWEXR8W6j3WQ:bL[@X^OT3
 R4
 S1
 R0
-R5
+R10
 8WrappedDIMM.sv
 FWrappedDIMM.sv
-!i122 2
+!i122 0
 L0 2 51
-R6
+R5
 r1
 !s85 0
 31
+R6
 R7
-R10
 R8
 !i113 1
 R9

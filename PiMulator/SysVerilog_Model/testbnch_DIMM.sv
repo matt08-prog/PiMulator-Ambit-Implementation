@@ -111,7 +111,8 @@ module testbnch_DIMM();
     `ifdef DDR4
     .parity(parity),
     `endif
-    .sync(sync)
+    .sync(sync),
+    .stall()   // FIX: Explicitly ignore the stall output to silence the warning
     );
     
     always #(tCK) ck_tp = ~ck_tp;
@@ -120,6 +121,9 @@ module testbnch_DIMM();
     
     integer i, j; // loop variable
     
+    // NEW: Array to store the written data for verification later
+    logic [DQWIDTH-1:0] expected_data [0:BL-1];
+
     initial
     begin
         // initialize all inputs
@@ -178,16 +182,29 @@ module testbnch_DIMM();
         assert (dut.TimingFSMi.BankFSM[0][1] == 5'h03) $display("OK: bank active"); else $display(dut.TimingFSMi.BankFSM[0][1]);
         
         // write test
+        // ==========================================
+        // 1. INITIAL WRITE TEST (Source Row Data)
+        // ==========================================
+        
+        // Issue the WR command first (No data yet!)
+        A = 17'b10000000000000010;
+        ba = 1;
+        writing = 1;
+        #tCK;
+        
+        // Now loop to supply data EXACTLY when rd_o_wr goes high
         for (i = 0; i < BL; i = i + 1)
         begin
-            A = (i==0)? 17'b10000000000000010 : 17'b00000000000000000;
-            ba = (i==0)? 1:1;// todo: needs to change?
-            writing = 1;
-            dq_reg = {$urandom, $urandom, $urandom, $urandom, $urandom, $urandom, $urandom, $urandom, $urandom };
+            A = 17'b00000000000000000; // Clear command
+            
+            // Generate random data
+            expected_data[i] = {$urandom, $urandom, $urandom, $urandom, $urandom, $urandom, $urandom, $urandom, $urandom };
+            dq_reg = expected_data[i];
+            
             dqs_tp_reg = {CHIPS{1'b1}};
             dqs_cn_reg = {CHIPS{1'b0}};
             #tCK;
-            assert ((dut.TimingFSMi.BankFSM[0][1] == 5'h12) || (i==0)) $display("OK: writing"); else $display(dut.TimingFSMi.BankFSM[0][1]);
+            assert (dut.TimingFSMi.BankFSM[0][1] == 5'h12) $display("OK: writing"); else $display(dut.TimingFSMi.BankFSM[0][1]);
         end
         dq_reg = {DQWIDTH{1'b0}};
         ba = 0;
@@ -197,28 +214,47 @@ module testbnch_DIMM();
         #(tCK*4); // no actions
         
         `ifdef RowClone
-        #(tCK*5); // activating again for RowClone
+        #(tCK*5);
+        // activating again for RowClone
         act_n = 0;
         ba = 1;
         A = 17'b00000000000000100;
+        sync[0][1] = 1;  
         #tCK;
         act_n = 1;
         A = 17'b00000000000000000;
-        #(tCK*15); // tRCD
+        #(tCK*15); // Wait for FSM to finish T_RCD
+        sync[0][1] = 0;  // <--- MOVE IT HERE
         `endif
         
         // read
         #tCK;
+        
+        // 1. Issue the RD command
+        A = 17'b10100000000000010;
+        ba = 1;
+        dqs_tp_reg = {CHIPS{1'b0}};
+        dqs_cn_reg = {CHIPS{1'b1}};
+        #tCK;
+
+        // 2. Clear command, wait exactly 1 cycle for BRAM pipeline latency
+        A = 17'b0;
+        #tCK;
+
+        // 3. Verify the data EXACTLY as it flows out of the BRAM
         for (i = 0; i < BL; i = i + 1)
         begin
-            A = (i==0)? 17'b10100000000000010 : 17'b00000000000000000;
-            ba = (i==0)? 1:1;// todo: needs to change?
-            dqs_tp_reg = {CHIPS{1'b0}};
-            dqs_cn_reg = {CHIPS{1'b1}};
+            if (dq === expected_data[i]) begin
+                $display("SUCCESS: Word %0d matched! Expected: %h, Got: %h", i, expected_data[i], dq);
+            end else begin
+                $error("FAILED: Word %0d mismatch! Expected: %h, Got: %h", i, expected_data[i], dq);
+            end
             #tCK;
-            assert ((dut.TimingFSMi.BankFSM[0][1] == 5'h0b) || (i==0)) $display("OK: reading"); else $display(dut.TimingFSMi.BankFSM[0][1]);
         end
+
         ba = 0;
+        
+        // 4. Wait out the rest of the FSM's read burst time before precharging
         #(tCK*(T_ABAR-BL));
         assert ((dut.TimingFSMi.BankFSM[0][1] == 5'h0b) || (i==0)) $display("OK: reading"); else $display(dut.TimingFSMi.BankFSM[0][1]);
         #(tCK*4); // no actions

@@ -10,15 +10,18 @@ module MEMSync #(
 )
   (
   output logic [CHWIDTH-1:0] cRowId,  // Current MEM row to be used
+  output logic [CHWIDTH-1:0] cSrcRowId,  // Current MEM data destination row
   output logic dirty,
   output logic hit,
   output logic [CHWIDTH-1:0] nRowId,  // Next MEM row to be used
+  output logic [CHWIDTH-1:0] nSrcRowId,  // Next MEM data destination row 
   output logic ready,
   output logic stall,                 // stall signal
   input logic ACT,                    // open a row
   input logic PR,                     // close a row
   input logic RD,
   input logic [ADDRWIDTH-1:0] RowId,
+  input logic [ADDRWIDTH-1:0] SrcRowId,
   input logic WR,
   input logic clk,
   input logic rst,
@@ -133,9 +136,11 @@ tag_table_type tag_tbl [CHROWS];
             tag_tbl[i].rowaddr <= '0;
         end
       cRowId[CHWIDTH-1:0] <= 0;
+      cSrcRowId[CHWIDTH-1:0] <= 0;
       dirty <= 0;
       hit <= 0;
       nRowId[CHWIDTH-1:0] <= 0;
+      nSrcRowId[CHWIDTH-1:0] <= 0;
       ready <= 0;
       stall <= 0;
     end
@@ -151,21 +156,27 @@ tag_table_type tag_tbl [CHROWS];
           stall <= 1;
           tag_tbl[cRowId].valid <= 1;
           tag_tbl[cRowId].rowaddr <= RowId;
-      end
-      CompareTag: begin
-          for (int i = 0; i < CHROWS; i++) begin
-              // look for the RowId in the emulation memory tag table
-              if((RowId == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) begin
-                  // this tag_tbl_i rowaddr equals RowId and is valid
-                  cRowId <= tag_tbl[i].tag; // will focus on this row
-                  hit <= 1;
-              end
-          end
+        end
+        CompareTag: begin
+            for (int i = 0; i < CHROWS; i++) begin
+                // 1. Resolve Destination Row (Standard Hit)
+                if((RowId == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) begin
+                    cRowId <= tag_tbl[i].tag;
+                    hit <= 1;
+                end
+                
+                // 2. Resolve Source Row (Independent Check)
+                if((SrcRowId == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) begin
+                    cSrcRowId <= tag_tbl[i].tag;
+                end
+            end
         end
         UpdateTag : begin
           cRowId[CHWIDTH-1:0] <= nRowId;
+          // cSrcRowId[CHWIDTH-1:0] <= nSrcRowId;
           dirty <= tag_tbl[nRowId].dirty;
           nRowId[CHWIDTH-1:0] <= nRowId+1;
+          // nSrcRowId[CHWIDTH-1:0] <= nSrcRowId+1;
         end
         WriteBack : begin
           stall <= 1;

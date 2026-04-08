@@ -118,6 +118,7 @@ module DIMM // top MEMulator module with DIMM interface
   
   // RAS = Row Address Strobe
   logic [ADDRWIDTH-1:0] RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
+  logic [ADDRWIDTH-1:0] SrcRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // NEW
   // CAS = Column Address Strobe
   logic [COLWIDTH-1:0] ColId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
   // Write Enable bit
@@ -143,7 +144,7 @@ module DIMM // top MEMulator module with DIMM interface
   .cs_n(cs_n[0]), // todo: scale up to more ranks
   .clk(clk),
   .bg(bg), .ba(ba),
-  .A(A), .RowId(RowId), .ColId(ColId), .rd_o_wr(rd_o_wr),
+  .A(A), .RowId(RowId), .SrcRowId(SrcRowId), .ColId(ColId), .rd_o_wr(rd_o_wr),
   .commands(commands)
   );
   
@@ -163,6 +164,7 @@ module DIMM // top MEMulator module with DIMM interface
   
   // Memory Emulation Model Data Sync engines (todo: also model row subarray belonging)
   logic [CHWIDTH-1:0] cRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
+  logic [CHWIDTH-1:0] cSrcRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // NEW
   // logic sync [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // TODO: this has to be an input from AXI-2-BoardMemory
   MEMSyncTop #(.BGWIDTH(BGWIDTH),
   .BANKGROUPS(BANKGROUPS),
@@ -173,9 +175,11 @@ module DIMM // top MEMulator module with DIMM interface
   .clk(clk),
   .reset_n(reset_n),
   .RowId(RowId),
+  .SrcRowId(SrcRowId), // NEW
   .BankFSM(BankFSM),
   .sync(sync),
   .cRowId(cRowId),
+  .cSrcRowId(cSrcRowId), // NEW
   .stall(stall)
   );
   
@@ -220,6 +224,16 @@ module DIMM // top MEMulator module with DIMM interface
     end
   endgenerate
   
+  // FIX: Create an array for rowclone_en so every bank gets its own signal
+  logic [0:0] rowclone_en_array [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
+  generate
+    for (bgi=0; bgi<BANKGROUPS; bgi=bgi+1) begin
+      for (bi=0; bi<BANKSPERGROUP; bi=bi+1) begin
+        assign rowclone_en_array[bgi][bi] = (BankFSM[bgi][bi] == 5'h14);
+      end
+    end
+  endgenerate
+
   // Rank and Chip instances that model the shared bus and data placement todo: multi rank logic
   generate
     for (ri = 0; ri < RANKS ; ri=ri+1)
@@ -235,6 +249,8 @@ module DIMM // top MEMulator module with DIMM interface
         .clk(clk),
         // all the information on the data bus is in these wire bundles below
         .rd_o_wr(rd_o_wr),
+        .rowclone_en(rowclone_en_array), // FIX: Pass array
+        .src_row(cSrcRowId),             // FIX: Pass array (Was missing!)
         .dqin(chipdqi[ci]),
         .dqout(chipdqo[ci]),
         .row(cRowId),

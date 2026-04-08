@@ -28,6 +28,8 @@ module Chip
     // out as dqout[3][2] and setting the row and column value will give the
     // relevant word
     input logic  [0:0]             rd_o_wr [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
+    input logic  [0:0]             rowclone_en [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // FIX: Array
+    input logic  [CHWIDTH-1:0]     src_row     [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // FIX: Array
     input logic  [DEVICE_WIDTH-1:0]dqin    [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic [DEVICE_WIDTH-1:0]dqout   [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     input logic  [CHWIDTH-1:0]     row     [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
@@ -45,6 +47,8 @@ module Chip
             .CHWIDTH(CHWIDTH)) BGi (
             .clk(clk),
             .rd_o_wr(rd_o_wr[bgi]),
+            .rowclone_en(rowclone_en[bgi]), // FIX: Added [bgi] slice
+            .src_row(src_row[bgi]),         // FIX: Renamed and added [bgi] slice
             .dqin(dqin[bgi]),
             .dqout(dqout[bgi]),
             .row(row[bgi]),
