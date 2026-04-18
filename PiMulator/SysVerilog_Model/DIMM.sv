@@ -224,12 +224,26 @@ module DIMM // top MEMulator module with DIMM interface
     end
   endgenerate
   
-  // FIX: Create an array for rowclone_en so every bank gets its own signal
+  // Create an array for rowclone_en and delay it to wait for Cache Resolution
   logic [0:0] rowclone_en_array [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
+  logic [7:0] rc_delay [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // 8-cycle delay shift register
+  
   generate
-    for (bgi=0; bgi<BANKGROUPS; bgi=bgi+1) begin
-      for (bi=0; bi<BANKSPERGROUP; bi=bi+1) begin
-        assign rowclone_en_array[bgi][bi] = (BankFSM[bgi][bi] == 5'h14);
+    for (bgi=0; bgi<BANKGROUPS; bgi=bgi+1) begin : RC_BG
+      for (bi=0; bi<BANKSPERGROUP; bi=bi+1) begin : RC_B
+        
+        always_ff @(posedge clk) begin
+            if (!reset_n) begin
+                rc_delay[bgi][bi] <= 8'b0;
+            end else begin
+                // Shift the FSM state through the register
+                rc_delay[bgi][bi] <= {rc_delay[bgi][bi][6:0], (BankFSM[bgi][bi] == 5'h14)};
+            end
+        end
+        
+        // Only assert rowclone_en to the array AFTER 8 cycles of stable FSM state
+        assign rowclone_en_array[bgi][bi] = rc_delay[bgi][bi][7];
+        
       end
     end
   endgenerate
