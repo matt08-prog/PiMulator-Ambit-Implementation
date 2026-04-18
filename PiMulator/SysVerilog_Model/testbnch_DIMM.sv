@@ -119,10 +119,98 @@ module testbnch_DIMM();
     always #(tCK) ck_cn = ~ck_cn;
     always #(tCK*0.5) ck2x = ~ck2x;
     
+    enum {C0 = 1006, C1 = 1007} CONTROL_GROUP;
+    enum {T0 = 1008, T1, T2, T3, DCC0, n_DCC0, DCC1, n_DCC1, n_DCC0_T0, n_DCC1_T1, T2_T3, T0_T3, T0_T1_T2, T1_T2_T3, DCC0_T1_T2, DCC1_T0_T3} BITWISE_GROUP;
+
     integer i, j; // loop variable
     
     // NEW: Array to store the written data for verification later
-    logic [DQWIDTH-1:0] expected_data [0:BL-1];
+    logic [DQWIDTH-1:0] expected_data_A [0:BL-1];
+    logic [DQWIDTH-1:0] expected_data_B [0:BL-1];
+    logic [DQWIDTH-1:0] expected_data_C [0:BL-1];
+
+    logic [DQWIDTH-1:0] test_data_to_store [0:BL-1] = {
+        64'hfbbbbbbbbbbbbbbb,
+        64'haaaaaaaaaaaaaaaa,
+        64'haaaaaaaaaaaaaaaa,
+        64'haaaaaaaaaaaaaaaa,
+        64'haaaaaaaaaaaaaaaa,
+        64'haaaaaaaaaaaaaaaa,
+        64'haaaaaaaaaaaaaaaa,
+        64'hbbbbbbbbbbbbbbbf
+    };
+
+    // 1. Activate a Row (Must be act_n = 0)
+    task activate_row(input [ADDRWIDTH-1:0] row_address);
+        act_n = 0; // MUST be 0 to activate!
+        A = row_address;
+        ba = 1;
+        sync[0][1] = 1; // Tell the cache to allocate
+        #tCK;
+        act_n = 1; // De-assert command
+        A = 17'b0;
+        ba = 0;
+        sync[0][1] = 0;
+        #(tCK*(T_RCD-1)); // Wait for sense amps to latch
+        
+        #(tCK*T_CL); // FIX: Wait for the FSM's post-activation cooldown timer!
+    endtask
+
+    // 2. Precharge a Bank (Close the active row)
+    task precharge_bank();
+        act_n = 1;
+        A = 17'b01000000000000000; // PR Command pattern
+        ba = 1;
+        #tCK;
+        A = 17'b0;
+        ba = 0;
+        #((T_RP-1)*tCK); // Wait for row to close
+    endtask
+
+    // 3. Write Data (Pass the array by reference so we can save it!)
+    task write_rand_data(input [ADDRWIDTH-1:0] row_address, output logic [DQWIDTH-1:0] saved_data [0:BL-1]);
+        activate_row(row_address);
+        
+        A = 17'b10000000000000010; // WR Command
+        ba = 1;
+        writing = 1;
+        #tCK;
+        
+        for (i = 0; i < BL; i = i + 1) begin
+            A = 17'b0; // Clear command
+            saved_data[i] = {$urandom, $urandom, $urandom, $urandom, $urandom, $urandom, $urandom, $urandom, $urandom };
+            dq_reg = saved_data[i];
+            
+            dqs_tp_reg = {CHIPS{1'b1}};
+            dqs_cn_reg = {CHIPS{1'b0}};
+            #tCK;
+            assert (dut.TimingFSMi.BankFSM[0][1] == 5'h12) $display("OK: writing to row address %d[%d]: %h", row_address, i, saved_data[i]); else $display(dut.TimingFSMi.BankFSM[0][1]);
+        end
+        dq_reg = {DQWIDTH{1'b0}};
+        ba = 0;
+        writing = 0;
+        #(tCK*(T_ABA-BL+4)); // Wait out the burst
+    endtask
+
+    // 4. Trigger RowClone
+    task trigger_rowclone(input [ADDRWIDTH-1:0] destination_row);
+        // We do NOT call activate_row() here, because the source row must ALREADY be open!
+        #(tCK*5); 
+        act_n = 0;
+        ba = 1;
+        A = destination_row; // The second back-to-back ACT triggers the clone
+        sync[0][1] = 1;
+        #tCK;
+        act_n = 1;
+        A = 17'b0;
+        
+        // Wait for the physical T_RCD delay so the FSM finishes the copy 
+        // and returns to the 'BankActive' state
+        #(tCK*(T_RCD + 2)); 
+        sync[0][1] = 0;
+        
+        #(tCK*T_CL); // FIX: Wait for the FSM's post-activation cooldown timer!
+    endtask
 
     initial
     begin
@@ -156,6 +244,8 @@ module testbnch_DIMM();
         reset_n = 1;
         cs_n = 1'b0; // LOW makes rank active
         #tCK;
+
+        // confirm that Memory Controller is in StateTimingIdle
         for (i = 0; i < BANKGROUPS; i = i + 1)
         begin
             for (j = 0; j < BANKSPERGROUP; j = j + 1)
@@ -165,67 +255,53 @@ module testbnch_DIMM();
         end
         #tCK;
         
-        // activating
-        act_n = 0;
-        A = 17'b00000000000000001;
-        ba = 1;
-        sync[0][1] = 1;
-        #tCK;
-        act_n = 1;
-        A = 17'b00000000000000000;
-        ba = 0;
-        #tCK;
-        assert (dut.TimingFSMi.BankFSM[0][1] == 5'h01) $display("OK: activating"); else $display(dut.TimingFSMi.BankFSM[0][1]);
-        #(tCK*(T_RCD-1)); // tRCD
-        assert (dut.TimingFSMi.BankFSM[0][1] == 5'h03) $display("OK: bank active"); else $display(dut.TimingFSMi.BankFSM[0][1]);
-        #(tCK*(T_CL-1)); // tCL
-        assert (dut.TimingFSMi.BankFSM[0][1] == 5'h03) $display("OK: bank active"); else $display(dut.TimingFSMi.BankFSM[0][1]);
+        // // activating
+        // act_n = 0; // A is treated as a row address when act_n is low
+        // A = 17'b00000000000000001;
+        // ba = 1;
+        // sync[0][1] = 1;
+        // #tCK;
+        // act_n = 1;
+        // A = 17'b00000000000000000;
+        // ba = 0;
+        // #tCK;
+        // assert (dut.TimingFSMi.BankFSM[0][1] == 5'h01) $display("OK: activating"); else $display(dut.TimingFSMi.BankFSM[0][1]);
+        // #(tCK*(T_RCD-1)); // tRCD
+        // assert (dut.TimingFSMi.BankFSM[0][1] == 5'h03) $display("OK: bank active"); else $display(dut.TimingFSMi.BankFSM[0][1]);
+        // #(tCK*(T_CL-1)); // tCL
+        // assert (dut.TimingFSMi.BankFSM[0][1] == 5'h03) $display("OK: bank active"); else $display(dut.TimingFSMi.BankFSM[0][1]);
         
         // write test
         // ==========================================
-        // 1. INITIAL WRITE TEST (Source Row Data)
+        // 1. Write Data A to Row 0
         // ==========================================
         
-        // Issue the WR command first (No data yet!)
-        A = 17'b10000000000000010;
-        ba = 1;
-        writing = 1;
-        #tCK;
-        
-        // Now loop to supply data EXACTLY when rd_o_wr goes high
-        for (i = 0; i < BL; i = i + 1)
-        begin
-            A = 17'b00000000000000000; // Clear command
-            
-            // Generate random data
-            expected_data[i] = {$urandom, $urandom, $urandom, $urandom, $urandom, $urandom, $urandom, $urandom, $urandom };
-            dq_reg = expected_data[i];
-            
-            dqs_tp_reg = {CHIPS{1'b1}};
-            dqs_cn_reg = {CHIPS{1'b0}};
-            #tCK;
-            assert (dut.TimingFSMi.BankFSM[0][1] == 5'h12) $display("OK: writing"); else $display(dut.TimingFSMi.BankFSM[0][1]);
-        end
-        dq_reg = {DQWIDTH{1'b0}};
-        ba = 0;
-        #(tCK*(T_ABA-BL));
-        assert ((dut.TimingFSMi.BankFSM[0][1] == 5'h12) || (i==0)) $display("OK: writing"); else $display(dut.TimingFSMi.BankFSM[0][1]);
-        writing = 0;
-        #(tCK*4); // no actions
-        
+        write_rand_data(17'd0, expected_data_A);
+        precharge_bank(); // MUST CLOSE BEFORE OPENING ROW 8!
+
+        // ==========================================
+        // 3. Write Data B to Row 8
+        // ==========================================
+        write_rand_data(17'd8, expected_data_B);
+        precharge_bank(); // MUST CLOSE BEFORE OPENING ROW 32!
+
+        // ==========================================
+        // 3. Write Data B to Row 8
+        // ==========================================
+        write_rand_data(17'd32, expected_data_C);
+        precharge_bank(); // MUST CLOSE BEFORE ROWCLONE!
+
+        // ==========================================
+        // 4. RowClone Row 0 to Row 4
+        // ==========================================
         `ifdef RowClone
-        #(tCK*5);
-        // activating again for RowClone
-        act_n = 0;
-        ba = 1;
-        A = 17'b00000000000000100;
-        sync[0][1] = 1;  
-        #tCK;
-        act_n = 1;
-        A = 17'b00000000000000000;
-        #(tCK*15); // Wait for FSM to finish T_RCD
-        sync[0][1] = 0;  // <--- MOVE IT HERE
+        activate_row(17'd0);                 // Step 1: Open the Source
+        trigger_rowclone(17'd4);             // Step 2: Open the Dest (Triggers copy!)
         `endif
+
+        // At this point, Row 4 is the currently active row. 
+        // You can now proceed directly to your `RD` command loop 
+        // and check `dq` against `expected_data_A`!
         
         // read
         #tCK;
@@ -244,10 +320,10 @@ module testbnch_DIMM();
         // 3. Verify the data EXACTLY as it flows out of the BRAM
         for (i = 0; i < BL; i = i + 1)
         begin
-            if (dq === expected_data[i]) begin
-                $display("SUCCESS: Word %0d matched! Expected: %h, Got: %h", i, expected_data[i], dq);
+            if (dq === expected_data_A[i]) begin
+                $display("SUCCESS: Word %0d matched! Expected: %h, Got: %h", i, expected_data_A[i], dq);
             end else begin
-                $error("FAILED: Word %0d mismatch! Expected: %h, Got: %h", i, expected_data[i], dq);
+                $error("FAILED: Word %0d mismatch! Expected: %h, Got: %h", i, expected_data_A[i], dq);
             end
             #tCK;
         end
@@ -259,6 +335,21 @@ module testbnch_DIMM();
         assert ((dut.TimingFSMi.BankFSM[0][1] == 5'h0b) || (i==0)) $display("OK: reading"); else $display(dut.TimingFSMi.BankFSM[0][1]);
         #(tCK*4); // no actions
         
+
+        // ==========================================
+        // 5. Ambit OR operation test
+        // ==========================================
+
+        // From Ambit paper:
+            // to perform a bitwise AND/OR of two rows A and B, and store the result in row R,
+            // our mechanism performs the following steps.
+            // 1. Copy data of row A to designated row T0
+            // 2. Copy data of row B to designated row T1
+            // 3. Initialize designated row T2 to 0
+            // 4. Activate designated rows T0, T1, an
+
+        
+
         // precharge and back to idle
         ba = 1;
         A = 17'b01000000000000000;
@@ -270,7 +361,8 @@ module testbnch_DIMM();
         #((T_RP-1)*tCK);
         assert (dut.TimingFSMi.BankFSM[0][1] == 5'h00) $display("OK: idle"); else $display(dut.TimingFSMi.BankFSM[0][1]);
         #(2*tCK);
-        $finish();
+        // $finish();
+        $stop();
     end;
     
 endmodule

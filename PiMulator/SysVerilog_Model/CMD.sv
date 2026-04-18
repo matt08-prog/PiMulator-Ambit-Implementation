@@ -94,18 +94,21 @@ module CMD
     // similarly, here we store the first column and iterate to implement a burst count
     always@(posedge clk)
     begin
+        // CONDITION 1: A new Read or Write command arrives
         if(WR || WRA || RD || RDA) begin
-            ColId[bg][ba] <= A[COLWIDTH-1:0];
-            Burst[bg][ba] <= 1;
+            ColId[bg][ba] <= A[COLWIDTH-1:0]; // Save the starting column
+            Burst[bg][ba] <= 1;               // Turn the auto-increment flag ON
         end
+        // CONDITION 2: A Precharge command arrives
         else if (PR) begin
-            //ColId[bg][ba] <= {COLWIDTH{1'b0}};
-            Burst[bg][ba] <= 0;
+            Burst[bg][ba] <= 0;               // Turn the auto-increment flag OFF
         end
+        // CONDITION 3: No new command (Idle/Continuing)
         else begin
             for (int i = 0; i < BANKGROUPS; i++) begin
                 for (int j = 0; j < BANKSPERGROUP; j++) begin
-                    if(Burst[i][j]) ColId[i][j] <= ColId[i][j] + 1;
+                    if(Burst[i][j]) 
+                        ColId[i][j] <= ColId[i][j] + 1; // Auto-increment!
                 end
             end
         end
