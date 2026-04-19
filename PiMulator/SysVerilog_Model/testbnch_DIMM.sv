@@ -40,6 +40,10 @@ module testbnch_DIMM();
     localparam T_RAS  = 32;
     localparam T_REFI = 9360;
     
+    // AMBIT parameters
+    localparam row_address_A = 956;
+    localparam row_address_B = 220;
+
     logic reset_n;
     logic ck2x;
     logic ck_cn;
@@ -129,7 +133,7 @@ module testbnch_DIMM();
     logic [DQWIDTH-1:0] expected_data_B [0:BL-1];
     logic [DQWIDTH-1:0] expected_data_C [0:BL-1];
 
-    logic [DQWIDTH-1:0] test_data_to_store [0:BL-1] = {
+    logic [DQWIDTH-1:0] operand_A_test_data [0:BL-1] = {
         64'hfbbbbbbbbbbbbbbb,
         64'haaaaaaaaaaaaaaaa,
         64'haaaaaaaaaaaaaaaa,
@@ -139,6 +143,19 @@ module testbnch_DIMM();
         64'haaaaaaaaaaaaaaaa,
         64'hbbbbbbbbbbbbbbbf
     };
+
+    logic [DQWIDTH-1:0] operand_B_test_data [0:BL-1] = {
+        64'hfccccccccccccccc,
+        64'haaaaaaaaaaaaaaaa,
+        64'haaaaaaaaaaaaaaaa,
+        64'haaaaaaaaaaaaaaaa,
+        64'haaaaaaaaaaaaaaaa,
+        64'haaaaaaaaaaaaaaaa,
+        64'haaaaaaaaaaaaaaaa,
+        64'hcccccccccccccccf
+    };
+
+    
 
     // 1. Activate a Row (Must be act_n = 0)
     task activate_row(input [ADDRWIDTH-1:0] row_address);
@@ -184,7 +201,31 @@ module testbnch_DIMM();
             dqs_tp_reg = {CHIPS{1'b1}};
             dqs_cn_reg = {CHIPS{1'b0}};
             #tCK;
-            assert (dut.TimingFSMi.BankFSM[0][1] == 5'h12) $display("OK: writing to row address %d[%d]: %h", row_address, i, saved_data[i]); else $display(dut.TimingFSMi.BankFSM[0][1]);
+            assert (dut.TimingFSMi.BankFSM[0][1] == 5'h12) $display("OK: writing random data to row address %d[%d]: %h", row_address, i, saved_data[i]); else $display(dut.TimingFSMi.BankFSM[0][1]);
+        end
+        dq_reg = {DQWIDTH{1'b0}};
+        ba = 0;
+        writing = 0;
+        #(tCK*(T_ABA-BL+4)); // Wait out the burst
+    endtask
+
+    // 3.5. Write Data (Pass the array by reference so we can save it!)
+    task write_data_to_row(input [ADDRWIDTH-1:0] row_address, input logic [DQWIDTH-1:0] data_to_write [0:BL-1]);
+        activate_row(row_address);
+        
+        A = 17'b10000000000000010; // WR Command
+        ba = 1;
+        writing = 1;
+        #tCK;
+        
+        for (i = 0; i < BL; i = i + 1) begin
+            A = 17'b0; // Clear command
+            dq_reg = data_to_write[i];
+            
+            dqs_tp_reg = {CHIPS{1'b1}};
+            dqs_cn_reg = {CHIPS{1'b0}};
+            #tCK;
+            assert (dut.TimingFSMi.BankFSM[0][1] == 5'h12) $display("OK: writing data to row address %d[%d]: %h", row_address, i, data_to_write[i]); else $display(dut.TimingFSMi.BankFSM[0][1]);
         end
         dq_reg = {DQWIDTH{1'b0}};
         ba = 0;
@@ -210,6 +251,38 @@ module testbnch_DIMM();
         sync[0][1] = 0;
         
         #(tCK*T_CL); // FIX: Wait for the FSM's post-activation cooldown timer!
+    endtask
+
+    task read_row_data_and_verify_expected_result(input [ADDRWIDTH-1:0] row_Address_to_read, input logic [DQWIDTH-1:0] expected_value [0:BL-1]);
+        precharge_bank(); // MUST CLOSE BEFORE ROWCLONE!
+        activate_row(row_Address_to_read);
+
+        // read
+        #tCK;
+        
+        // 1. Issue the RD command
+        A = 17'b10100000000000010;
+        ba = 1;
+        dqs_tp_reg = {CHIPS{1'b0}};
+        dqs_cn_reg = {CHIPS{1'b1}};
+        #tCK;
+
+        // 2. Clear command, wait exactly 1 cycle for BRAM pipeline latency
+        A = 17'b0;
+        #tCK;
+
+        // 3. Verify the data EXACTLY as it flows out of the BRAM
+        for (i = 0; i < BL; i = i + 1)
+        begin
+            if (dq === expected_value[i]) begin
+                $display("SUCCESS: Word %0d matched! Expected: %h, Got: %h", i, expected_value[i], dq);
+            end else begin
+                $error("FAILED: Word %0d mismatch! Expected: %h, Got: %h", i, expected_value[i], dq);
+            end
+            #tCK;
+        end
+
+        ba = 0;
     endtask
 
     initial
@@ -255,22 +328,6 @@ module testbnch_DIMM();
         end
         #tCK;
         
-        // // activating
-        // act_n = 0; // A is treated as a row address when act_n is low
-        // A = 17'b00000000000000001;
-        // ba = 1;
-        // sync[0][1] = 1;
-        // #tCK;
-        // act_n = 1;
-        // A = 17'b00000000000000000;
-        // ba = 0;
-        // #tCK;
-        // assert (dut.TimingFSMi.BankFSM[0][1] == 5'h01) $display("OK: activating"); else $display(dut.TimingFSMi.BankFSM[0][1]);
-        // #(tCK*(T_RCD-1)); // tRCD
-        // assert (dut.TimingFSMi.BankFSM[0][1] == 5'h03) $display("OK: bank active"); else $display(dut.TimingFSMi.BankFSM[0][1]);
-        // #(tCK*(T_CL-1)); // tCL
-        // assert (dut.TimingFSMi.BankFSM[0][1] == 5'h03) $display("OK: bank active"); else $display(dut.TimingFSMi.BankFSM[0][1]);
-        
         // write test
         // ==========================================
         // 1. Write Data A to Row 0
@@ -303,32 +360,8 @@ module testbnch_DIMM();
         // You can now proceed directly to your `RD` command loop 
         // and check `dq` against `expected_data_A`!
         
-        // read
-        #tCK;
-        
-        // 1. Issue the RD command
-        A = 17'b10100000000000010;
-        ba = 1;
-        dqs_tp_reg = {CHIPS{1'b0}};
-        dqs_cn_reg = {CHIPS{1'b1}};
-        #tCK;
-
-        // 2. Clear command, wait exactly 1 cycle for BRAM pipeline latency
-        A = 17'b0;
-        #tCK;
-
-        // 3. Verify the data EXACTLY as it flows out of the BRAM
-        for (i = 0; i < BL; i = i + 1)
-        begin
-            if (dq === expected_data_A[i]) begin
-                $display("SUCCESS: Word %0d matched! Expected: %h, Got: %h", i, expected_data_A[i], dq);
-            end else begin
-                $error("FAILED: Word %0d mismatch! Expected: %h, Got: %h", i, expected_data_A[i], dq);
-            end
-            #tCK;
-        end
-
-        ba = 0;
+        read_row_data_and_verify_expected_result(17'd4, expected_data_A);
+        read_row_data_and_verify_expected_result(17'd8, expected_data_B);
         
         // 4. Wait out the rest of the FSM's read burst time before precharging
         #(tCK*(T_ABAR-BL));
@@ -348,7 +381,18 @@ module testbnch_DIMM();
             // 3. Initialize designated row T2 to 0
             // 4. Activate designated rows T0, T1, an
 
-        
+        // 0. Initialize operands into data memory
+        write_data_to_row(row_address_A, operand_A_test_data);
+        precharge_bank(); // MUST CLOSE BEFORE OPENING row_address_B!
+
+        write_data_to_row(row_address_A, operand_A_test_data);
+        precharge_bank(); // MUST CLOSE BEFORE OPENING row_address_B!
+
+        // 1. Copy data of row A to designated row T0
+        `ifdef RowClone
+        activate_row(row_address_A);                 // Step 1: Open the Source
+        trigger_rowclone(T0);             // Step 2: Open the Dest (Triggers copy!)
+        `endif
 
         // precharge and back to idle
         ba = 1;
