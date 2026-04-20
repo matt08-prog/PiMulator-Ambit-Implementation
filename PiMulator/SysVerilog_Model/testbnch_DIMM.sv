@@ -292,6 +292,58 @@ module testbnch_DIMM();
         precharge_bank();
     endtask
 
+    task trigger_ambit_operation(input [ADDRWIDTH-1:0] OP1_row_addr, input [ADDRWIDTH-1:0] OP2_row_addr, input [ADDRWIDTH-1:0] result_dest_row_addr);
+        ///
+        // Activate Row of Operand 1
+        ///
+        act_n = 0; // MUST be 0 to activate!
+        A = OP1_row_addr;
+        ba = 1;
+        sync[0][1] = 1; // Tell the cache to allocate
+        #tCK;
+        act_n = 1; // De-assert command
+        A = 17'b0;
+        ba = 0;
+        sync[0][1] = 0;
+        #(tCK*(T_RCD-1)); // Wait for sense amps to latch
+        
+        #(tCK*T_CL); // FIX: Wait for the FSM's post-activation cooldown timer!
+        
+        
+        
+        
+        ///
+        // Activate Row of Operand 2 to enter ZRowClone state
+        ///
+        #(tCK*5); 
+        act_n = 0;
+        ba = 1;
+        A = OP2_row_addr; // The second back-to-back ACT triggers the clone
+        sync[0][1] = 1;
+        #tCK;
+        act_n = 1;
+        A = 17'b0;
+        
+        // Wait for the physical T_RCD delay so the FSM finishes the copy 
+        // and returns to the 'BankActive' state
+        // #(tCK*(T_RCD + 2)); 
+        // sync[0][1] = 0;
+
+        ///
+        // Activate Row of result destination to enter AMBIT_OP state
+        ///
+        #(tCK*5); 
+        act_n = 0;
+        ba = 1;
+        A = result_dest_row_addr; // The second back-to-back ACT triggers the clone
+        sync[0][1] = 1;
+        #tCK;
+        act_n = 1;
+        A = 17'b0;
+        
+        #(tCK*T_CL); // FIX: Wait for the FSM's post-activation cooldown timer!
+    endtask
+
     initial
     begin
         // initialize all inputs
@@ -383,7 +435,8 @@ module testbnch_DIMM();
             // 1. Copy data of row A to designated row T0
             // 2. Copy data of row B to designated row T1
             // 3. Initialize designated row T2 to 0
-            // 4. Activate designated rows T0, T1, an
+            // 4. Activate designated rows T0, T1, and T2 simultaneously
+            // 5. Copy data of row T0 to row R
 
         // 0. Initialize operands into data memory
         write_data_to_row(row_address_A, operand_A_test_data);
@@ -392,14 +445,9 @@ module testbnch_DIMM();
         write_data_to_row(row_address_B, operand_B_test_data);
         precharge_bank(); // MUST CLOSE BEFORE OPENING row_address_B!
 
-        // 2.5 Verify data was coppied to correct row
+        // 0.5 Verify data was coppied to correct row
         read_row_data_and_verify_expected_result(row_address_A, operand_A_test_data);
         read_row_data_and_verify_expected_result(row_address_B, operand_B_test_data);
-
-        // 4. Wait out the rest of the FSM's read burst time before precharging
-        // #(tCK*(T_ABAR-BL));
-        // assert ((dut.TimingFSMi.BankFSM[0][1] == 5'h0b) || (i==0)) $display("OK: reading"); else $display(dut.TimingFSMi.BankFSM[0][1]);
-        // #(tCK*4); // no actions
 
         // 1. Copy data of row A to designated row T0
         `ifdef RowClone
@@ -408,21 +456,21 @@ module testbnch_DIMM();
         `endif
 
         precharge_bank();
-        
+
         // 2. Copy data of row B to designated row T1
         `ifdef RowClone
         activate_row(row_address_B);                 // Step 1: Open the Source
         trigger_rowclone(T1);             // Step 2: Open the Dest (Triggers copy!)
         `endif
 
-        // 4. Wait out the rest of the FSM's read burst time before precharging
-        // #(tCK*(T_ABAR-BL));
-        // assert ((dut.TimingFSMi.BankFSM[0][1] == 5'h0b) || (i==0)) $display("OK: reading"); else $display(dut.TimingFSMi.BankFSM[0][1]);
-        // #(tCK*4); // no actions
-
         // 2.5 Verify data was coppied to correct row
         read_row_data_and_verify_expected_result(T0, operand_A_test_data);
         read_row_data_and_verify_expected_result(T1, operand_B_test_data);
+
+        // 3. T2 is already initialized to all  0s
+
+        // 4. Activate designated rows T0, T1, and T2 simultaneously
+        trigger_ambit_operation(T0, T1, T2);
 
         // precharge and back to idle
         ba = 1;

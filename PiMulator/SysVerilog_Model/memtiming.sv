@@ -70,7 +70,8 @@ module memtiming #(parameter int BL = 8) (
     SelfRefreshing = 5'b10001, 
     Writing        = 5'b10010, 
     WritingAPR     = 5'b10011, 
-    ZRowClone      = 5'b10100
+    ZRowClone      = 5'b10100,
+    ZAMBIT_OP      = 5'b10101
   } state, nextstate;
 
   assign stateout = state;  // <--- ADD THIS LINE
@@ -264,8 +265,19 @@ module memtiming #(parameter int BL = 8) (
         if (tRCDct==8'd1) begin
           nextstate = BankActive;
         end
+        else if (ACT) begin
+          nextstate = ZAMBIT_OP;
+        end
         else begin
           nextstate = ZRowClone;
+        end
+      end
+      ZAMBIT_OP     : begin
+        if (tRCDct==8'd1) begin
+          nextstate = BankActive;
+        end
+        else begin
+          nextstate = ZAMBIT_OP;
         end
       end
     endcase
@@ -358,6 +370,12 @@ module memtiming #(parameter int BL = 8) (
           tWRct[7:0] <= (tWRct>0)?tWRct-1:tWRct;
         end
         ZRowClone     : begin
+          tCLct[7:0] <= tCLct;
+          tCWLct[7:0] <= tCWLct;
+          tRASct[7:0] <= (tRASct>0)?tRASct-1:tRASct;
+          tRCDct[7:0] <= tRCDct-1;
+        end
+        ZAMBIT_OP     : begin
           tCLct[7:0] <= tCLct;
           tCWLct[7:0] <= tCWLct;
           tRASct[7:0] <= (tRASct>0)?tRASct-1:tRASct;
