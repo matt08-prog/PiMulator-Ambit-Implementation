@@ -11,7 +11,7 @@ cModel Technology
 Z0 d/home/matthewroloff/Documents/UCoder/embedded/PIMulator/PIMulator_Assignment_3/PiMulator/PiMulator/SysVerilog_Model
 vBank
 Z1 DXx6 sv_std 3 std 0 22 VYECXdT12H8WgbUP_5Y6:3
-Z2 !s110 1775681964
+Z2 !s110 1776563813
 !i10b 1
 !s100 0COFNkSUj54YMEHmFWAmB3
 Z3 !s11b Dg1SIo80bB@j0V0VzS_@n1
@@ -28,7 +28,7 @@ Z5 OV;L;2020.1;71
 r1
 !s85 0
 31
-Z6 !s108 1775681964.000000
+Z6 !s108 1776563813.000000
 Z7 !s107 testbnch_TimingFSM.sv|testbnch_RefInterleaving.sv|testbnch_MEMSyncTop.sv|testbnch_MEMSync.sv|testbnch_DIMM.sv|testbnch_Chip.sv|testbnch_CMD.sv|testbnch_BankInterleaving.sv|testbnch_Bank.sv|memtiming.sv|bank_array.sv|WrappedDIMM.sv|TimingFSM.sv|MEMSyncTop.sv|MEMSync.sv|DIMM.sv|Chip.sv|CMD.sv|BankGroup.sv|Bank.sv|
 Z8 !s90 -reportprogress|300|Bank.sv|BankGroup.sv|CMD.sv|Chip.sv|DIMM.sv|MEMSync.sv|MEMSyncTop.sv|TimingFSM.sv|WrappedDIMM.sv|bank_array.sv|memtiming.sv|testbnch_Bank.sv|testbnch_BankInterleaving.sv|testbnch_CMD.sv|testbnch_Chip.sv|testbnch_DIMM.sv|testbnch_MEMSync.sv|testbnch_MEMSyncTop.sv|testbnch_RefInterleaving.sv|testbnch_TimingFSM.sv|
 !i113 1
@@ -38,17 +38,17 @@ vbank_array
 R1
 R2
 !i10b 1
-!s100 n?B;XoE7YX4gWl@Bga1K61
+!s100 gV;?><R97LeTcE`G8TZ<G0
 R3
-IX`zZ8fCjiI:<<_9niFIO^1
+ImCihmXJBk:cWRA]AKZObD2
 R4
 S1
 R0
-w1775605034
+w1776543439
 8bank_array.sv
 Fbank_array.sv
 !i122 0
-L0 3 42
+L0 3 46
 R5
 r1
 !s85 0
@@ -112,17 +112,17 @@ vCMD
 R1
 R2
 !i10b 1
-!s100 18Rk;QWVSm?o:aV@5[@Si1
+!s100 35h8;3RL]ZeZ=?b<>TKII1
 R3
-I6>kG[@ReNiT[Ve`:zH^GV1
+I207M0bW?ai>jT=D=YYXEU1
 R4
 S1
 R0
-w1775605142
+w1776546138
 8CMD.sv
 FCMD.sv
 !i122 0
-L0 10 129
+L0 10 132
 R5
 r1
 !s85 0
@@ -137,17 +137,17 @@ vDIMM
 R1
 R2
 !i10b 1
-!s100 J^hfkReBLWEk[ke55WmX_1
+!s100 Ia^jYMeFA^[P@R32WQcdd3
 R3
-IGma[dWD_Afmmon7P1Y8_W0
+II_jjj0OmE7eF2Wz>:oK@n2
 R4
 S1
 R0
-w1775677542
+w1776556550
 8DIMM.sv
 FDIMM.sv
 !i122 0
-L0 7 257
+L0 7 271
 R5
 r1
 !s85 0
@@ -336,17 +336,17 @@ vtestbnch_DIMM
 R1
 R2
 !i10b 1
-!s100 z`z__FV5Eg?aBG0:LF[T02
+!s100 dA2ND7z_A1W7J6Ce0Z7:73
 R3
-Iz2]S[j3W=`i4Mj1Fa_F]T1
+I3Q=o]<=S>1MXi0VN_6Wgn2
 R4
 S1
 R0
-w1775681954
+w1776563803
 8testbnch_DIMM.sv
 Ftestbnch_DIMM.sv
 !i122 0
-L0 8 269
+L0 8 421
 R5
 r1
 !s85 0

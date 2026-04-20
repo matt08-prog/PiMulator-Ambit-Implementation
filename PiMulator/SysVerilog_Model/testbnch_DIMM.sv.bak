@@ -274,22 +274,15 @@ module testbnch_DIMM();
         // 3. Verify the data EXACTLY as it flows out of the BRAM
         for (i = 0; i < BL; i = i + 1)
         begin
-            if (dq === expected_value[i]) begin
-                $display("SUCCESS: Word %0d matched! Expected: %h, Got: %h", i, expected_value[i], dq);
+            if (dq === expected_data_A[i]) begin
+                $display("SUCCESS: Word %0d matched! Expected: %h, Got: %h", i, expected_data_A[i], dq);
             end else begin
-                $error("FAILED: Word %0d mismatch! Expected: %h, Got: %h", i, expected_value[i], dq);
+                $error("FAILED: Word %0d mismatch! Expected: %h, Got: %h", i, expected_data_A[i], dq);
             end
             #tCK;
         end
 
         ba = 0;
-
-        // 4. Wait out the rest of the FSM's read burst time before precharging
-        #(tCK*(T_ABAR-BL));
-        assert ((dut.TimingFSMi.BankFSM[0][1] == 5'h0b) || (i==0)) $display("OK: reading"); else $display(dut.TimingFSMi.BankFSM[0][1]);
-        #(tCK*4); // no actions
-
-        precharge_bank();
     endtask
 
     initial
@@ -335,6 +328,22 @@ module testbnch_DIMM();
         end
         #tCK;
         
+        // // activating
+        // act_n = 0; // A is treated as a row address when act_n is low
+        // A = 17'b00000000000000001;
+        // ba = 1;
+        // sync[0][1] = 1;
+        // #tCK;
+        // act_n = 1;
+        // A = 17'b00000000000000000;
+        // ba = 0;
+        // #tCK;
+        // assert (dut.TimingFSMi.BankFSM[0][1] == 5'h01) $display("OK: activating"); else $display(dut.TimingFSMi.BankFSM[0][1]);
+        // #(tCK*(T_RCD-1)); // tRCD
+        // assert (dut.TimingFSMi.BankFSM[0][1] == 5'h03) $display("OK: bank active"); else $display(dut.TimingFSMi.BankFSM[0][1]);
+        // #(tCK*(T_CL-1)); // tCL
+        // assert (dut.TimingFSMi.BankFSM[0][1] == 5'h03) $display("OK: bank active"); else $display(dut.TimingFSMi.BankFSM[0][1]);
+        
         // write test
         // ==========================================
         // 1. Write Data A to Row 0
@@ -368,9 +377,11 @@ module testbnch_DIMM();
         // and check `dq` against `expected_data_A`!
         
         read_row_data_and_verify_expected_result(17'd4, expected_data_A);
-        read_row_data_and_verify_expected_result(17'd8, expected_data_B);
         
-        
+        // 4. Wait out the rest of the FSM's read burst time before precharging
+        #(tCK*(T_ABAR-BL));
+        assert ((dut.TimingFSMi.BankFSM[0][1] == 5'h0b) || (i==0)) $display("OK: reading"); else $display(dut.TimingFSMi.BankFSM[0][1]);
+        #(tCK*4); // no actions
         
 
         // ==========================================
@@ -389,40 +400,14 @@ module testbnch_DIMM();
         write_data_to_row(row_address_A, operand_A_test_data);
         precharge_bank(); // MUST CLOSE BEFORE OPENING row_address_B!
 
-        write_data_to_row(row_address_B, operand_B_test_data);
+        write_data_to_row(row_address_A, operand_A_test_data);
         precharge_bank(); // MUST CLOSE BEFORE OPENING row_address_B!
-
-        // 2.5 Verify data was coppied to correct row
-        read_row_data_and_verify_expected_result(row_address_A, operand_A_test_data);
-        read_row_data_and_verify_expected_result(row_address_B, operand_B_test_data);
-
-        // 4. Wait out the rest of the FSM's read burst time before precharging
-        // #(tCK*(T_ABAR-BL));
-        // assert ((dut.TimingFSMi.BankFSM[0][1] == 5'h0b) || (i==0)) $display("OK: reading"); else $display(dut.TimingFSMi.BankFSM[0][1]);
-        // #(tCK*4); // no actions
 
         // 1. Copy data of row A to designated row T0
         `ifdef RowClone
         activate_row(row_address_A);                 // Step 1: Open the Source
         trigger_rowclone(T0);             // Step 2: Open the Dest (Triggers copy!)
         `endif
-
-        precharge_bank();
-        
-        // 2. Copy data of row B to designated row T1
-        `ifdef RowClone
-        activate_row(row_address_B);                 // Step 1: Open the Source
-        trigger_rowclone(T1);             // Step 2: Open the Dest (Triggers copy!)
-        `endif
-
-        // 4. Wait out the rest of the FSM's read burst time before precharging
-        // #(tCK*(T_ABAR-BL));
-        // assert ((dut.TimingFSMi.BankFSM[0][1] == 5'h0b) || (i==0)) $display("OK: reading"); else $display(dut.TimingFSMi.BankFSM[0][1]);
-        // #(tCK*4); // no actions
-
-        // 2.5 Verify data was coppied to correct row
-        read_row_data_and_verify_expected_result(T0, operand_A_test_data);
-        read_row_data_and_verify_expected_result(T1, operand_B_test_data);
 
         // precharge and back to idle
         ba = 1;
