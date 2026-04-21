@@ -43,6 +43,7 @@ module testbnch_DIMM();
     // AMBIT parameters
     localparam row_address_A = 956;
     localparam row_address_B = 220;
+    localparam ambit_result_row = 333;
 
     logic reset_n;
     logic ck2x;
@@ -124,7 +125,7 @@ module testbnch_DIMM();
     always #(tCK*0.5) ck2x = ~ck2x;
     
     enum {C0 = 1006, C1 = 1007} CONTROL_GROUP;
-    enum {T0 = 1008, T1, T2, T3, DCC0, n_DCC0, DCC1, n_DCC1, n_DCC0_T0, n_DCC1_T1, T2_T3, T0_T3, T0_T1_T2, T1_T2_T3, DCC0_T1_T2, DCC1_T0_T3} BITWISE_GROUP;
+    enum {T0 = 1008, T1, T2, T3, DCC0, n_DCC0, DCC1, n_DCC1, n_DCC0_T0, n_DCC1_T1, T2_T3, T0_T3, T0_T1_T2=66, T1_T2_T3, DCC0_T1_T2, DCC1_T0_T3} BITWISE_GROUP;
 
     integer i, j; // loop variable
     
@@ -132,6 +133,17 @@ module testbnch_DIMM();
     logic [DQWIDTH-1:0] expected_data_A [0:BL-1];
     logic [DQWIDTH-1:0] expected_data_B [0:BL-1];
     logic [DQWIDTH-1:0] expected_data_C [0:BL-1];
+
+    logic [DQWIDTH-1:0] test_data_all_0s [0:BL-1] = {
+        64'h0000000000000000,
+        64'h0000000000000000,
+        64'h0000000000000000,
+        64'h0000000000000000,
+        64'h0000000000000000,
+        64'h0000000000000000,
+        64'h0000000000000000,
+        64'h0000000000000000
+    };
 
     logic [DQWIDTH-1:0] operand_A_test_data [0:BL-1] = {
         64'hfbbbbbbbbbbbbbbb,
@@ -155,7 +167,14 @@ module testbnch_DIMM();
         64'hcccccccccccccccf
     };
 
-    
+    logic [DQWIDTH-1:0] operand_A_AND_operand_B_test_result [0:BL-1];
+
+  // Bitwise AND operation
+    always_comb begin
+        foreach (operand_A_AND_operand_B_test_result[i]) begin
+            operand_A_AND_operand_B_test_result[i] = operand_A_test_data[i] & operand_B_test_data[i];
+        end
+    end
 
     // 1. Activate a Row (Must be act_n = 0)
     task activate_row(input [ADDRWIDTH-1:0] row_address);
@@ -292,37 +311,54 @@ module testbnch_DIMM();
         precharge_bank();
     endtask
 
-    task trigger_ambit_operation(input [ADDRWIDTH-1:0] OP1_row_addr, input [ADDRWIDTH-1:0] OP2_row_addr, input [ADDRWIDTH-1:0] result_dest_row_addr);
-        ///
-        // Activate Row of Operand 1
-        ///
-        act_n = 0; // MUST be 0 to activate!
-        A = OP1_row_addr;
-        ba = 1;
-        sync[0][1] = 1; // Tell the cache to allocate
-        #tCK;
-        act_n = 1; // De-assert command
-        A = 17'b0;
-        ba = 0;
-        sync[0][1] = 0;
-        #(tCK*(T_RCD-1)); // Wait for sense amps to latch
-        
-        #(tCK*T_CL); // FIX: Wait for the FSM's post-activation cooldown timer!
-        
-        
+    task trigger_ambit_operation(input [ADDRWIDTH-1:0] B_GroupAddress, input [ADDRWIDTH-1:0] Data_GroupAddress);
+        // case (src_row)
+        //     T0_T1_T2:    begin 
+        //         if (|memory_array[T2[$clog2(DEPTH)-1 : COLWIDTH]] == 0) begin // all bits are 0 so this is an AND operation
+        //             memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= memory_array[{T0[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] & memory_array[{T1[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}];
+        //         end
+        //     end
+            
+        //     // GREEN:  begin light = 3'b001; next_state = YELLOW; end
+        //     // YELLOW: begin light = 3'b010; next_state = RED;    end
+        //     // default: begin light = 3'b100; next_state = RED;    end // Safety default
+        // endcase
         
         
         ///
-        // Activate Row of Operand 2 to enter ZRowClone state
+        // Activate Row of specified B_Group address
         ///
-        #(tCK*5); 
-        act_n = 0;
-        ba = 1;
-        A = OP2_row_addr; // The second back-to-back ACT triggers the clone
-        sync[0][1] = 1;
-        #tCK;
-        act_n = 1;
-        A = 17'b0;
+        activate_row(B_GroupAddress);
+        // act_n = 0; // MUST be 0 to activate!
+        // A = B_GroupAddress;
+        // ba = 1;
+        // sync[0][1] = 1; // Tell the cache to allocate
+        // #tCK;
+        // act_n = 1; // De-assert command
+        // A = 17'b0;
+        // ba = 0;
+        // sync[0][1] = 0;
+        // #(tCK*(T_RCD-1)); // Wait for sense amps to latch
+        
+        // #(tCK*T_CL); // FIX: Wait for the FSM's post-activation cooldown timer!
+        
+        
+        
+        
+        ///
+        // Activate Row of destination address to enter ZRowClone state and move result to Data_GroupAdress
+        ///
+        // #(tCK*5); 
+        // act_n = 0;
+        // ba = 1;
+        // A = Data_GroupAddress; // The second back-to-back ACT triggers the clone
+        // sync[0][1] = 1;
+        // #tCK;
+        // act_n = 1;
+        // A = 17'b0;
+        trigger_rowclone(Data_GroupAddress);
+
+        precharge_bank();
         
         // Wait for the physical T_RCD delay so the FSM finishes the copy 
         // and returns to the 'BankActive' state
@@ -332,16 +368,16 @@ module testbnch_DIMM();
         ///
         // Activate Row of result destination to enter AMBIT_OP state
         ///
-        #(tCK*5); 
-        act_n = 0;
-        ba = 1;
-        A = result_dest_row_addr; // The second back-to-back ACT triggers the clone
-        sync[0][1] = 1;
-        #tCK;
-        act_n = 1;
-        A = 17'b0;
+        // #(tCK*5); 
+        // act_n = 0;
+        // ba = 1;
+        // A = result_dest_row_addr; // The second back-to-back ACT triggers the clone
+        // sync[0][1] = 1;
+        // #tCK;
+        // act_n = 1;
+        // A = 17'b0;
         
-        #(tCK*T_CL); // FIX: Wait for the FSM's post-activation cooldown timer!
+        // #(tCK*T_CL); // FIX: Wait for the FSM's post-activation cooldown timer!
     endtask
 
     initial
@@ -415,6 +451,7 @@ module testbnch_DIMM();
         trigger_rowclone(17'd4);             // Step 2: Open the Dest (Triggers copy!)
         `endif
 
+        precharge_bank(); // CLOSE AFTER  ROWCLONE!
         // At this point, Row 4 is the currently active row. 
         // You can now proceed directly to your `RD` command loop 
         // and check `dq` against `expected_data_A`!
@@ -467,10 +504,27 @@ module testbnch_DIMM();
         read_row_data_and_verify_expected_result(T0, operand_A_test_data);
         read_row_data_and_verify_expected_result(T1, operand_B_test_data);
 
-        // 3. T2 is already initialized to all  0s
+        // 3. T2 initialized to all 0s to perform AND operation on T0 and T1
+        write_data_to_row(T2, test_data_all_0s);
 
+        precharge_bank();
         // 4. Activate designated rows T0, T1, and T2 simultaneously
-        trigger_ambit_operation(T0, T1, T2);
+        trigger_ambit_operation(T0_T1_T2, ambit_result_row);
+
+
+        // precharge_bank(); // MUST CLOSE BEFORE ROWCLONE!
+
+        // // ==========================================
+        // // 4. RowClone Row 32 to Row ambit_result_row to make sure I can clone to there
+        // // ==========================================
+        // `ifdef RowClone
+        // activate_row(17'd32);                 // Step 1: Open the Source
+        // trigger_rowclone(ambit_result_row);             // Step 2: Open the Dest (Triggers copy!)
+        // `endif
+
+        // read_row_data_and_verify_expected_result(ambit_result_row, expected_data_C);
+
+        read_row_data_and_verify_expected_result(ambit_result_row, operand_A_AND_operand_B_test_result);
 
         // precharge and back to idle
         ba = 1;

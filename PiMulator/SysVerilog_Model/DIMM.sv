@@ -119,6 +119,7 @@ module DIMM // top MEMulator module with DIMM interface
   // RAS = Row Address Strobe
   logic [ADDRWIDTH-1:0] RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
   logic [ADDRWIDTH-1:0] SrcRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // NEW
+  logic [ADDRWIDTH-1:0] AmbitOp1RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
   // CAS = Column Address Strobe
   logic [COLWIDTH-1:0] ColId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
   // Write Enable bit
@@ -144,7 +145,7 @@ module DIMM // top MEMulator module with DIMM interface
   .cs_n(cs_n[0]), // todo: scale up to more ranks
   .clk(clk),
   .bg(bg), .ba(ba),
-  .A(A), .RowId(RowId), .SrcRowId(SrcRowId), .ColId(ColId), .rd_o_wr(rd_o_wr),
+  .A(A), .RowId(RowId), .SrcRowId(SrcRowId), .AmbitOp1RowId(AmbitOp1RowId), .ColId(ColId), .rd_o_wr(rd_o_wr),
   .commands(commands)
   );
   
@@ -165,6 +166,7 @@ module DIMM // top MEMulator module with DIMM interface
   // Memory Emulation Model Data Sync engines (todo: also model row subarray belonging)
   logic [CHWIDTH-1:0] cRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
   logic [CHWIDTH-1:0] cSrcRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // NEW
+  logic [CHWIDTH-1:0] cAmbitOp1RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // NEW
   // logic sync [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // TODO: this has to be an input from AXI-2-BoardMemory
   MEMSyncTop #(.BGWIDTH(BGWIDTH),
   .BANKGROUPS(BANKGROUPS),
@@ -176,10 +178,12 @@ module DIMM // top MEMulator module with DIMM interface
   .reset_n(reset_n),
   .RowId(RowId),
   .SrcRowId(SrcRowId), // NEW
+  .AmbitOp1RowId(AmbitOp1RowId),
   .BankFSM(BankFSM),
   .sync(sync),
   .cRowId(cRowId),
   .cSrcRowId(cSrcRowId), // NEW
+  .cAmbitOp1RowId(cAmbitOp1RowId), // NEW
   .stall(stall)
   );
   
@@ -248,6 +252,30 @@ module DIMM // top MEMulator module with DIMM interface
     end
   endgenerate
 
+  // Create an array for AMBIT_en and delay it to wait for Cache Resolution
+  logic [0:0] ambit_en_array [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
+  logic [7:0] amb_delay [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // 8-cycle delay shift register
+  
+  generate
+    for (bgi=0; bgi<BANKGROUPS; bgi=bgi+1) begin : AMB_BG
+      for (bi=0; bi<BANKSPERGROUP; bi=bi+1) begin : AMB_B
+        
+        always_ff @(posedge clk) begin
+            if (!reset_n) begin
+                amb_delay[bgi][bi] <= 8'b0;
+            end else begin
+                // Shift the FSM state through the register
+                amb_delay[bgi][bi] <= {amb_delay[bgi][bi][6:0], (BankFSM[bgi][bi] == 5'h15)};
+            end
+        end
+        
+        // Only assert AMBIT_en to the array AFTER 8 cycles of stable FSM state
+        assign ambit_en_array[bgi][bi] = amb_delay[bgi][bi][7];
+        
+      end
+    end
+  endgenerate
+
   // Rank and Chip instances that model the shared bus and data placement todo: multi rank logic
   generate
     for (ri = 0; ri < RANKS ; ri=ri+1)
@@ -264,7 +292,9 @@ module DIMM // top MEMulator module with DIMM interface
         // all the information on the data bus is in these wire bundles below
         .rd_o_wr(rd_o_wr),
         .rowclone_en(rowclone_en_array), // FIX: Pass array
+        .ambit_en(ambit_en_array),
         .src_row(cSrcRowId),             // FIX: Pass array (Was missing!)
+        .AmbitOp1RowId(cAmbitOp1RowId),
         .dqin(chipdqi[ci]),
         .dqout(chipdqo[ci]),
         .row(cRowId),

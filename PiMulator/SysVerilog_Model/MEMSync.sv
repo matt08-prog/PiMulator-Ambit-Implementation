@@ -11,12 +11,14 @@ module MEMSync #(
   (
   output logic [CHWIDTH-1:0] cRowId,  // Current MEM row to be used
   output logic [CHWIDTH-1:0] cSrcRowId,  // Current MEM data destination row
+  output logic [CHWIDTH-1:0] cAmbitOp1RowId,  // Current MEM data destination row
   output logic dirty,
   output logic hit,
   output logic [CHWIDTH-1:0] nRowId,  // Next MEM row to be used
   output logic [CHWIDTH-1:0] nSrcRowId,  // Next MEM data destination row 
   output logic ready,
   output logic stall,                 // stall signal
+  input logic [ADDRWIDTH-1:0] AmbitOp1RowId, // NEW
   input logic ACT,                    // open a row
   input logic PR,                     // close a row
   input logic RD,
@@ -132,7 +134,7 @@ tag_table_type tag_tbl [CHROWS];
         for (int i = 0; i < CHROWS; i++) begin
             tag_tbl[i].valid <= 0;
             tag_tbl[i].dirty <= 0;
-            tag_tbl[i].tag <= CHWIDTH'(i);
+            tag_tbl[i].tag <= CHWIDTH'(i); // 	Cast variable i to bit size CHWIDTH
             tag_tbl[i].rowaddr <= '0;
         end
       cRowId[CHWIDTH-1:0] <= 0;

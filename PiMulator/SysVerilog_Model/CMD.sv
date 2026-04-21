@@ -34,6 +34,7 @@ module CMD
     input logic [ADDRWIDTH-1:0] A,
     output logic [ADDRWIDTH-1:0] RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic [ADDRWIDTH-1:0] SrcRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
+    output logic [ADDRWIDTH-1:0] AmbitOp1RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
     output logic [COLWIDTH-1:0] ColId [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic rd_o_wr [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic [18:0] commands
@@ -82,6 +83,9 @@ module CMD
     always@(posedge clk)
     begin
         if(ACT) begin 
+            // keep track of active row two activations ago
+            AmbitOp1RowId[bg][ba] <= SrcRowId[bg][ba];
+
             // NEW: Keep track of the previously active row as the source
             SrcRowId[bg][ba] <= RowId[bg][ba]; 
             // Update the current active row to the destination
