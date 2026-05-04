@@ -120,6 +120,10 @@ module DIMM // top MEMulator module with DIMM interface
   logic [ADDRWIDTH-1:0] RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
   logic [ADDRWIDTH-1:0] SrcRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // NEW
   logic [ADDRWIDTH-1:0] AmbitOp1RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
+  logic [ADDRWIDTH-1:0] AmbitOp2RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
+  logic [ADDRWIDTH-1:0] AmbitOp3RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
+  logic ambit_en [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
+  logic should_enable_ambit [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
   // CAS = Column Address Strobe
   logic [COLWIDTH-1:0] ColId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
   // Write Enable bit
@@ -145,7 +149,7 @@ module DIMM // top MEMulator module with DIMM interface
   .cs_n(cs_n[0]), // todo: scale up to more ranks
   .clk(clk),
   .bg(bg), .ba(ba),
-  .A(A), .RowId(RowId), .SrcRowId(SrcRowId), .AmbitOp1RowId(AmbitOp1RowId), .ColId(ColId), .rd_o_wr(rd_o_wr),
+  .A(A), .RowId(RowId), .SrcRowId(SrcRowId), .AmbitOp1RowId(AmbitOp1RowId), .AmbitOp2RowId(AmbitOp2RowId), .AmbitOp3RowId(AmbitOp3RowId), .should_enable_ambit(should_enable_ambit), .ColId(ColId), .rd_o_wr(rd_o_wr),
   .commands(commands)
   );
   
@@ -167,6 +171,8 @@ module DIMM // top MEMulator module with DIMM interface
   logic [CHWIDTH-1:0] cRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
   logic [CHWIDTH-1:0] cSrcRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // NEW
   logic [CHWIDTH-1:0] cAmbitOp1RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // NEW
+  logic [CHWIDTH-1:0] cAmbitOp2RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // NEW
+  logic [CHWIDTH-1:0] cAmbitOp3RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // NEW
   // logic sync [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // TODO: this has to be an input from AXI-2-BoardMemory
   MEMSyncTop #(.BGWIDTH(BGWIDTH),
   .BANKGROUPS(BANKGROUPS),
@@ -179,11 +185,15 @@ module DIMM // top MEMulator module with DIMM interface
   .RowId(RowId),
   .SrcRowId(SrcRowId), // NEW
   .AmbitOp1RowId(AmbitOp1RowId),
+  .AmbitOp2RowId(AmbitOp2RowId),
+  .AmbitOp3RowId(AmbitOp3RowId),
   .BankFSM(BankFSM),
   .sync(sync),
   .cRowId(cRowId),
   .cSrcRowId(cSrcRowId), // NEW
   .cAmbitOp1RowId(cAmbitOp1RowId), // NEW
+  .cAmbitOp2RowId(cAmbitOp2RowId), // NEW
+  .cAmbitOp3RowId(cAmbitOp3RowId), // NEW
   .stall(stall)
   );
   
@@ -265,7 +275,7 @@ module DIMM // top MEMulator module with DIMM interface
                 amb_delay[bgi][bi] <= 8'b0;
             end else begin
                 // Shift the FSM state through the register
-                amb_delay[bgi][bi] <= {amb_delay[bgi][bi][6:0], (BankFSM[bgi][bi] == 5'h15)};
+                amb_delay[bgi][bi] <= {amb_delay[bgi][bi][6:0], (should_enable_ambit[bgi][bi] == 1'b1)};
             end
         end
         
@@ -292,9 +302,12 @@ module DIMM // top MEMulator module with DIMM interface
         // all the information on the data bus is in these wire bundles below
         .rd_o_wr(rd_o_wr),
         .rowclone_en(rowclone_en_array), // FIX: Pass array
-        .ambit_en(ambit_en_array),
         .src_row(cSrcRowId),             // FIX: Pass array (Was missing!)
+        .virt_src_row(SrcRowId), // NEW: Route the 17-bit address straight from CMD!
         .AmbitOp1RowId(cAmbitOp1RowId),
+        .AmbitOp2RowId(cAmbitOp2RowId),
+        .AmbitOp3RowId(cAmbitOp3RowId),
+        .ambit_en(ambit_en_array),
         .dqin(chipdqi[ci]),
         .dqout(chipdqo[ci]),
         .row(cRowId),

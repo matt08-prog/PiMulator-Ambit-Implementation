@@ -12,6 +12,8 @@ module MEMSync #(
   output logic [CHWIDTH-1:0] cRowId,  // Current MEM row to be used
   output logic [CHWIDTH-1:0] cSrcRowId,  // Current MEM data destination row
   output logic [CHWIDTH-1:0] cAmbitOp1RowId,  // Current MEM data destination row
+  output logic [CHWIDTH-1:0] cAmbitOp2RowId,  // Current MEM data destination row
+  output logic [CHWIDTH-1:0] cAmbitOp3RowId,  // Current MEM data destination row
   output logic dirty,
   output logic hit,
   output logic [CHWIDTH-1:0] nRowId,  // Next MEM row to be used
@@ -19,6 +21,8 @@ module MEMSync #(
   output logic ready,
   output logic stall,                 // stall signal
   input logic [ADDRWIDTH-1:0] AmbitOp1RowId, // NEW
+  input logic [ADDRWIDTH-1:0] AmbitOp2RowId, // NEW
+  input logic [ADDRWIDTH-1:0] AmbitOp3RowId, // NEW
   input logic ACT,                    // open a row
   input logic PR,                     // close a row
   input logic RD,
@@ -50,6 +54,7 @@ tag_table_type tag_tbl [CHROWS];
     hitWR      = 3'b110
   } state, nextstate;
 
+  enum {T0 = 1008, T1, T2, T3, DCC0, n_DCC0, DCC1, n_DCC1, n_DCC0_T0, n_DCC1_T1, T2_T3, T0_T3, T0_T1_T2=66, T1_T2_T3, DCC0_T1_T2, DCC1_T0_T3} BITWISE_GROUP;
 
   // comb always block
   always_comb begin
@@ -161,16 +166,19 @@ tag_table_type tag_tbl [CHROWS];
         end
         CompareTag: begin
             for (int i = 0; i < CHROWS; i++) begin
-                // 1. Resolve Destination Row (Standard Hit)
+                // 1. Standard Destination
                 if((RowId == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) begin
                     cRowId <= tag_tbl[i].tag;
                     hit <= 1;
                 end
-                
-                // 2. Resolve Source Row (Independent Check)
+                // 2. Source Row (For RowClone)
                 if((SrcRowId == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) begin
                     cSrcRowId <= tag_tbl[i].tag;
                 end
+                // 3. AMBIT Operands (Parallel Lookup)
+                if((T0 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp1RowId <= tag_tbl[i].tag;
+                if((T1 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp2RowId <= tag_tbl[i].tag;
+                if((T2 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp3RowId <= tag_tbl[i].tag;
             end
         end
         UpdateTag : begin

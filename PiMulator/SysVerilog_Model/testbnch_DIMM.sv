@@ -312,72 +312,9 @@ module testbnch_DIMM();
     endtask
 
     task trigger_ambit_operation(input [ADDRWIDTH-1:0] B_GroupAddress, input [ADDRWIDTH-1:0] Data_GroupAddress);
-        // case (src_row)
-        //     T0_T1_T2:    begin 
-        //         if (|memory_array[T2[$clog2(DEPTH)-1 : COLWIDTH]] == 0) begin // all bits are 0 so this is an AND operation
-        //             memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= memory_array[{T0[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] & memory_array[{T1[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}];
-        //         end
-        //     end
-            
-        //     // GREEN:  begin light = 3'b001; next_state = YELLOW; end
-        //     // YELLOW: begin light = 3'b010; next_state = RED;    end
-        //     // default: begin light = 3'b100; next_state = RED;    end // Safety default
-        // endcase
-        
-        
-        ///
-        // Activate Row of specified B_Group address
-        ///
         activate_row(B_GroupAddress);
-        // act_n = 0; // MUST be 0 to activate!
-        // A = B_GroupAddress;
-        // ba = 1;
-        // sync[0][1] = 1; // Tell the cache to allocate
-        // #tCK;
-        // act_n = 1; // De-assert command
-        // A = 17'b0;
-        // ba = 0;
-        // sync[0][1] = 0;
-        // #(tCK*(T_RCD-1)); // Wait for sense amps to latch
-        
-        // #(tCK*T_CL); // FIX: Wait for the FSM's post-activation cooldown timer!
-        
-        
-        
-        
-        ///
-        // Activate Row of destination address to enter ZRowClone state and move result to Data_GroupAdress
-        ///
-        // #(tCK*5); 
-        // act_n = 0;
-        // ba = 1;
-        // A = Data_GroupAddress; // The second back-to-back ACT triggers the clone
-        // sync[0][1] = 1;
-        // #tCK;
-        // act_n = 1;
-        // A = 17'b0;
         trigger_rowclone(Data_GroupAddress);
-
         precharge_bank();
-        
-        // Wait for the physical T_RCD delay so the FSM finishes the copy 
-        // and returns to the 'BankActive' state
-        // #(tCK*(T_RCD + 2)); 
-        // sync[0][1] = 0;
-
-        ///
-        // Activate Row of result destination to enter AMBIT_OP state
-        ///
-        // #(tCK*5); 
-        // act_n = 0;
-        // ba = 1;
-        // A = result_dest_row_addr; // The second back-to-back ACT triggers the clone
-        // sync[0][1] = 1;
-        // #tCK;
-        // act_n = 1;
-        // A = 17'b0;
-        
-        // #(tCK*T_CL); // FIX: Wait for the FSM's post-activation cooldown timer!
     endtask
 
     initial
@@ -525,6 +462,7 @@ module testbnch_DIMM();
         // read_row_data_and_verify_expected_result(ambit_result_row, expected_data_C);
 
         read_row_data_and_verify_expected_result(ambit_result_row, operand_A_AND_operand_B_test_result);
+        // read_row_data_and_verify_expected_result(T2, operand_A_AND_operand_B_test_result);
 
         // precharge and back to idle
         ba = 1;

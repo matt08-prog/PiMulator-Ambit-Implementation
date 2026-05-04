@@ -18,11 +18,15 @@ module MEMSyncTop #(
     input logic [ADDRWIDTH-1:0] RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     input logic [ADDRWIDTH-1:0] SrcRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
     input logic [ADDRWIDTH-1:0] AmbitOp1RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
+    input logic [ADDRWIDTH-1:0] AmbitOp2RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
+    input logic [ADDRWIDTH-1:0] AmbitOp3RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
     input logic [4:0] BankFSM [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     input logic sync [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic [CHWIDTH-1:0] cRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic [CHWIDTH-1:0] cSrcRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
     output logic [CHWIDTH-1:0] cAmbitOp1RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
+    output logic [CHWIDTH-1:0] cAmbitOp2RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
+    output logic [CHWIDTH-1:0] cAmbitOp3RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
     output logic stall
     );
     
@@ -44,6 +48,8 @@ module MEMSyncTop #(
                 .cRowId(cRowId[bgi][bi]),
                 .cSrcRowId(cSrcRowId[bgi][bi]), // NEW
                 .cAmbitOp1RowId(cAmbitOp1RowId[bgi][bi]), // NEW
+                .cAmbitOp2RowId(cAmbitOp2RowId[bgi][bi]), // NEW
+                .cAmbitOp3RowId(cAmbitOp3RowId[bgi][bi]), // NEW
                 .ready(ready[bgi][bi]),
                 .stall(stalls[bgi][bi]),
                 .ACT((BankFSM[bgi][bi]==5'b00001) || (BankFSM[bgi][bi]==5'h14)),
@@ -52,6 +58,8 @@ module MEMSyncTop #(
                 .RowId(RowId[bgi][bi]),
                 .SrcRowId(SrcRowId[bgi][bi]),   // NEW
                 .AmbitOp1RowId(AmbitOp1RowId[bgi][bi]),   // NEW
+                .AmbitOp2RowId(AmbitOp2RowId[bgi][bi]),   // NEW
+                .AmbitOp3RowId(AmbitOp3RowId[bgi][bi]),   // NEW
                 .WR((BankFSM[bgi][bi]==5'b10010)||(BankFSM[bgi][bi]==5'b10011)), 
                 .clk(clk),
                 .rst(!reset_n),

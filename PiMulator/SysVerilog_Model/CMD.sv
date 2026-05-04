@@ -35,11 +35,15 @@ module CMD
     output logic [ADDRWIDTH-1:0] RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic [ADDRWIDTH-1:0] SrcRowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
     output logic [ADDRWIDTH-1:0] AmbitOp1RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
+    output logic [ADDRWIDTH-1:0] AmbitOp2RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
+    output logic [ADDRWIDTH-1:0] AmbitOp3RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
+    output logic should_enable_ambit [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic [COLWIDTH-1:0] ColId [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic rd_o_wr [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic [18:0] commands
     );
     
+    enum {T0 = 1008, T1, T2, T3, DCC0, n_DCC0, DCC1, n_DCC1, n_DCC0_T0, n_DCC1_T1, T2_T3, T0_T3, T0_T1_T2=66, T1_T2_T3, DCC0_T1_T2, DCC1_T0_T3} BITWISE_GROUP;
     // ras_n -> A16, cas_n -> A15, we_n -> A14
     // Dual function inputs:
     // - when act_n & cs_n are LOW, these are interpreted as *Row* Address Bits (RAS Row Address Strobe)
@@ -84,11 +88,30 @@ module CMD
     begin
         if(ACT) begin 
             // keep track of active row two activations ago
-            AmbitOp1RowId[bg][ba] <= SrcRowId[bg][ba];
+            // AmbitOp1RowId[bg][ba] <= SrcRowId[bg][ba];
 
             // NEW: Keep track of the previously active row as the source
-            SrcRowId[bg][ba] <= RowId[bg][ba]; 
+            SrcRowId[bg][ba] <= RowId[bg][ba];
             // Update the current active row to the destination
+            // TODO: This is where it should be determined if this is a simple row activation or tripple row activation (AMBIT operation if address is in B_12:B15)
+            // TODO: Based on that determination, an AMBIT_en signal should be enabled
+            case (RowId[bg][ba])
+                    T0_T1_T2:    begin
+                        AmbitOp1RowId[bg][ba] <= T0;
+                        AmbitOp2RowId[bg][ba] <= T1;
+                        AmbitOp3RowId[bg][ba] <= T2;
+                        $display("CMD recieved TO_T1_T2 so enabling should_enable_ambit");
+                        should_enable_ambit[bg][ba] <= 1;
+                    end
+
+                    default: begin
+                        AmbitOp1RowId[bg][ba] <= 0;
+                        AmbitOp2RowId[bg][ba] <= 0;
+                        AmbitOp3RowId[bg][ba] <= 0;
+                        should_enable_ambit[bg][ba] <= 0;
+                    end
+                endcase
+
             RowId[bg][ba] <= A;                
         end
     end

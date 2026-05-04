@@ -15,9 +15,12 @@ module BankGroup
     // the Bank inputs are bundled together for easy indexing
     input logic  [0:0]             rd_o_wr [BANKSPERGROUP-1:0],
     input logic  [0:0]             rowclone_en [BANKSPERGROUP-1:0], // FIX: Array
-    input logic  [0:0]             ambit_en [BANKSPERGROUP-1:0],
     input logic  [CHWIDTH-1:0]     src_row     [BANKSPERGROUP-1:0], // FIX: Array
+    input  logic [16:0]            virt_src_row[BANKSPERGROUP-1:0], // NEW
     input logic  [CHWIDTH-1:0]     AmbitOp1RowId     [BANKSPERGROUP-1:0],
+    input logic  [CHWIDTH-1:0]     AmbitOp2RowId     [BANKSPERGROUP-1:0],
+    input logic  [CHWIDTH-1:0]     AmbitOp3RowId     [BANKSPERGROUP-1:0],
+    input logic  [0:0]             ambit_en [BANKSPERGROUP-1:0],
     input logic  [DEVICE_WIDTH-1:0]dqin    [BANKSPERGROUP-1:0],
     output logic [DEVICE_WIDTH-1:0]dqout   [BANKSPERGROUP-1:0],
     input logic  [CHWIDTH-1:0]     row     [BANKSPERGROUP-1:0],
@@ -35,9 +38,12 @@ module BankGroup
             .clk(clk),
             .rd_o_wr(rd_o_wr[bi]),
             .rowclone_en(rowclone_en[bi]), // FIX: Added [bi] slice
-            .ambit_en(ambit_en[bi]),
             .src_row(src_row[bi]),         // FIX: Added [bi] slice
+            .virt_src_row(virt_src_row[bi]),
             .AmbitOp1RowId(AmbitOp1RowId[bi]),
+            .AmbitOp2RowId(AmbitOp2RowId[bi]),
+            .AmbitOp3RowId(AmbitOp3RowId[bi]),
+            .ambit_en(ambit_en[bi]),
             .dqin(dqin[bi]),
             .dqout(dqout[bi]),
             .row(row[bi]),
