@@ -43,18 +43,18 @@ module bank_array #(
                         
                         // Check if T2 (AmbitOp3) is initialized to 0 for this specific column
                         if (|memory_array[{AmbitOp3RowId, c[COLWIDTH-1:0]}] == 0) begin
-                            if (c == 0) begin
-                                $display("BANK ARRAY - OK: AMBITing AND row %d to row address %d into row %d", AmbitOp1RowId, AmbitOp2RowId, addr);
-                            end
+                            // if (c == 0) begin
+                            //     $display("BANK ARRAY - OK: AMBITing AND row %d to row address %d into row %d", AmbitOp1RowId, AmbitOp2RowId, addr);
+                            // end
                             // AND operation
                             memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= 
                                 memory_array[{AmbitOp1RowId, c[COLWIDTH-1:0]}] & 
                                 memory_array[{AmbitOp2RowId, c[COLWIDTH-1:0]}];
                         end 
                         else begin
-                            if (c == 0) begin
-                                $display("BANK ARRAY - OK: AMBITing OR row %d to row address %d into row %d", AmbitOp1RowId, AmbitOp2RowId, addr);
-                            end
+                            // if (c == 0) begin
+                            //     $display("BANK ARRAY - OK: AMBITing OR row %d to row address %d into row %d", AmbitOp1RowId, AmbitOp2RowId, addr);
+                            // end
                             // OR operation
                             memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= 
                                 memory_array[{AmbitOp1RowId, c[COLWIDTH-1:0]}] | 

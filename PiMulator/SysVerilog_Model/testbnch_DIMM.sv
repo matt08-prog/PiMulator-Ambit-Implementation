@@ -145,6 +145,17 @@ module testbnch_DIMM();
         64'h0000000000000000
     };
 
+    logic [DQWIDTH-1:0] test_data_all_1s [0:BL-1] = {
+        64'h1111111111111111,
+        64'h1111111111111111,
+        64'h1111111111111111,
+        64'h1111111111111111,
+        64'h1111111111111111,
+        64'h1111111111111111,
+        64'h1111111111111111,
+        64'h1111111111111111
+    };
+
     logic [DQWIDTH-1:0] operand_A_test_data [0:BL-1] = {
         64'hfbbbbbbbbbbbbbbb,
         64'haaaaaaaaaaaaaaaa,
@@ -168,11 +179,18 @@ module testbnch_DIMM();
     };
 
     logic [DQWIDTH-1:0] operand_A_AND_operand_B_test_result [0:BL-1];
+    logic [DQWIDTH-1:0] operand_A_OR_operand_B_test_result [0:BL-1];
 
-  // Bitwise AND operation
+    // Bitwise AND operation
     always_comb begin
         foreach (operand_A_AND_operand_B_test_result[i]) begin
             operand_A_AND_operand_B_test_result[i] = operand_A_test_data[i] & operand_B_test_data[i];
+        end
+    end
+    // Bitwise AND operation
+    always_comb begin
+        foreach (operand_A_OR_operand_B_test_result[i]) begin
+            operand_A_OR_operand_B_test_result[i] = operand_A_test_data[i] | operand_B_test_data[i];
         end
     end
 
@@ -400,7 +418,7 @@ module testbnch_DIMM();
         
 
         // ==========================================
-        // 5. Ambit OR operation test
+        // 5. Ambit AND operation test
         // ==========================================
 
         // From Ambit paper:
@@ -448,21 +466,21 @@ module testbnch_DIMM();
         // 4. Activate designated rows T0, T1, and T2 simultaneously
         trigger_ambit_operation(T0_T1_T2, ambit_result_row);
 
-
-        // precharge_bank(); // MUST CLOSE BEFORE ROWCLONE!
-
-        // // ==========================================
-        // // 4. RowClone Row 32 to Row ambit_result_row to make sure I can clone to there
-        // // ==========================================
-        // `ifdef RowClone
-        // activate_row(17'd32);                 // Step 1: Open the Source
-        // trigger_rowclone(ambit_result_row);             // Step 2: Open the Dest (Triggers copy!)
-        // `endif
-
-        // read_row_data_and_verify_expected_result(ambit_result_row, expected_data_C);
-
         read_row_data_and_verify_expected_result(ambit_result_row, operand_A_AND_operand_B_test_result);
         // read_row_data_and_verify_expected_result(T2, operand_A_AND_operand_B_test_result);
+
+        // ==========================================
+        // 6. Ambit OR operation test
+        // ==========================================
+
+        // 3. T2 initialized to all 0s to perform AND operation on T0 and T1
+        write_data_to_row(T2, test_data_all_1s);
+
+        precharge_bank();
+        // 4. Activate designated rows T0, T1, and T2 simultaneously
+        trigger_ambit_operation(T0_T1_T2, ambit_result_row);
+
+        read_row_data_and_verify_expected_result(ambit_result_row, operand_A_OR_operand_B_test_result);
 
         // precharge and back to idle
         ba = 1;
