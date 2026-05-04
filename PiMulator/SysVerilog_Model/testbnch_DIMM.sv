@@ -418,7 +418,7 @@ module testbnch_DIMM();
         
 
         // ==========================================
-        // 5. Ambit AND operation test
+        // 5. Ambit AND operation test using BITWISE_GROUP T0_T1_T2
         // ==========================================
 
         // From Ambit paper:
@@ -467,7 +467,6 @@ module testbnch_DIMM();
         trigger_ambit_operation(T0_T1_T2, ambit_result_row);
 
         read_row_data_and_verify_expected_result(ambit_result_row, operand_A_AND_operand_B_test_result);
-        // read_row_data_and_verify_expected_result(T2, operand_A_AND_operand_B_test_result);
 
         // ==========================================
         // 6. Ambit OR operation test
@@ -481,6 +480,51 @@ module testbnch_DIMM();
         trigger_ambit_operation(T0_T1_T2, ambit_result_row);
 
         read_row_data_and_verify_expected_result(ambit_result_row, operand_A_OR_operand_B_test_result);
+
+        // ==========================================
+        // 7. Ambit AND operation test using BITWISE_GROUP T1_T2_T3
+        // ==========================================
+
+        // 0. Initialize operands into data memory
+        write_data_to_row(row_address_A, operand_A_test_data);
+        precharge_bank(); // MUST CLOSE BEFORE OPENING row_address_B!
+
+        write_data_to_row(row_address_B, operand_B_test_data);
+        precharge_bank(); // MUST CLOSE BEFORE OPENING row_address_B!
+
+        // 0.5 Verify data was coppied to correct row
+        read_row_data_and_verify_expected_result(row_address_A, operand_A_test_data);
+        read_row_data_and_verify_expected_result(row_address_B, operand_B_test_data);
+
+        // 1. Copy data of row A to designated row T0
+        `ifdef RowClone
+        activate_row(row_address_A);                 // Step 1: Open the Source
+        trigger_rowclone(T1);             // Step 2: Open the Dest (Triggers copy!)
+        `endif
+
+        precharge_bank();
+
+        // 2. Copy data of row B to designated row T1
+        `ifdef RowClone
+        activate_row(row_address_B);                 // Step 1: Open the Source
+        trigger_rowclone(T2);             // Step 2: Open the Dest (Triggers copy!)
+        `endif
+
+        // 2.5 Verify data was coppied to correct row
+        read_row_data_and_verify_expected_result(T1, operand_A_test_data);
+        read_row_data_and_verify_expected_result(T2, operand_B_test_data);
+
+        // 3. T2 initialized to all 0s to perform AND operation on T0 and T1
+        write_data_to_row(T3, test_data_all_0s);
+
+        precharge_bank();
+        // 4. Activate designated rows T0, T1, and T2 simultaneously
+        trigger_ambit_operation(T1_T2_T3, ambit_result_row);
+
+        read_row_data_and_verify_expected_result(ambit_result_row, operand_A_AND_operand_B_test_result);
+
+
+
 
         // precharge and back to idle
         ba = 1;

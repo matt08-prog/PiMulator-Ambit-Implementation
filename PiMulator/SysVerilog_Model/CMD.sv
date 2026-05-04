@@ -104,6 +104,30 @@ module CMD
                         should_enable_ambit[bg][ba] <= 1;
                     end
 
+                    T1_T2_T3:    begin
+                        AmbitOp1RowId[bg][ba] <= T1;
+                        AmbitOp2RowId[bg][ba] <= T2;
+                        AmbitOp3RowId[bg][ba] <= T3;
+                        $display("CMD recieved T1_T2_T3 so enabling should_enable_ambit");
+                        should_enable_ambit[bg][ba] <= 1;
+                    end
+
+                    DCC0_T1_T2:    begin
+                        AmbitOp1RowId[bg][ba] <= DCC0;
+                        AmbitOp2RowId[bg][ba] <= T1;
+                        AmbitOp3RowId[bg][ba] <= T2;
+                        $display("CMD recieved DCC0_T1_T2 so enabling should_enable_ambit");
+                        should_enable_ambit[bg][ba] <= 1;
+                    end
+
+                    DCC1_T0_T3:    begin
+                        AmbitOp1RowId[bg][ba] <= DCC1;
+                        AmbitOp2RowId[bg][ba] <= T0;
+                        AmbitOp3RowId[bg][ba] <= T3;
+                        $display("CMD recieved DCC1_T0_T3 so enabling should_enable_ambit");
+                        should_enable_ambit[bg][ba] <= 1;
+                    end
+
                     default: begin
                         AmbitOp1RowId[bg][ba] <= 0;
                         AmbitOp2RowId[bg][ba] <= 0;

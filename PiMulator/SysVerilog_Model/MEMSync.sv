@@ -176,9 +176,28 @@ tag_table_type tag_tbl [CHROWS];
                     cSrcRowId <= tag_tbl[i].tag;
                 end
                 // 3. AMBIT Operands (Parallel Lookup)
-                if((T0 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp1RowId <= tag_tbl[i].tag;
-                if((T1 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp2RowId <= tag_tbl[i].tag;
-                if((T2 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp3RowId <= tag_tbl[i].tag;
+                case (RowId)
+                  T0_T1_T2 : begin
+                    if((T0 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp1RowId <= tag_tbl[i].tag;
+                    if((T1 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp2RowId <= tag_tbl[i].tag;
+                    if((T2 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp3RowId <= tag_tbl[i].tag;
+                  end
+                  T1_T2_T3 : begin
+                    if((T1 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp1RowId <= tag_tbl[i].tag;
+                    if((T2 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp2RowId <= tag_tbl[i].tag;
+                    if((T3 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp3RowId <= tag_tbl[i].tag;
+                  end
+                  DCC0_T1_T2 : begin
+                    if((DCC0 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp1RowId <= tag_tbl[i].tag;
+                    if((T1 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp2RowId <= tag_tbl[i].tag;
+                    if((T2 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp3RowId <= tag_tbl[i].tag;
+                  end
+                  DCC1_T0_T3 : begin
+                    if((DCC1 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp1RowId <= tag_tbl[i].tag;
+                    if((T0 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp2RowId <= tag_tbl[i].tag;
+                    if((T3 == tag_tbl[i].rowaddr) && (tag_tbl[i].valid == 1)) cAmbitOp3RowId <= tag_tbl[i].tag;
+                  end
+                endcase
             end
         end
         UpdateTag : begin

@@ -37,8 +37,7 @@ module bank_array #(
     
     always @ (posedge clk) begin
         if (ambit_en) begin
-            case (virt_src_row)
-                T0_T1_T2: begin 
+                if (virt_src_row == T0_T1_T2 || virt_src_row == T1_T2_T3 || virt_src_row == DCC0_T1_T2 || virt_src_row == DCC1_T0_T3) begin
                     for (int c = 0; c < (1<<COLWIDTH); c++) begin
                         
                         // Check if T2 (AmbitOp3) is initialized to 0 for this specific column
@@ -64,7 +63,7 @@ module bank_array #(
                     end
                 end
                 // Add other BITWISE_GROUP cases here...
-            endcase
+            // endcase
         end else if (rowclone_en) begin
             // NEW: Bulk copy the entire row in simulation.
             // Note: This works perfectly in ModelSim emulation, but for actual FPGA 
