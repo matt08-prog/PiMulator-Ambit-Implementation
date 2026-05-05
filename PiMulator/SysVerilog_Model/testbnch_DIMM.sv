@@ -683,6 +683,64 @@ module testbnch_DIMM();
         read_row_data_and_verify_expected_result(row_address_C, expected_data_D_inverted);
 
 
+        // precharge and back to idle
+        ba = 1;
+        A = 17'b01000000000000000;
+        #tCK;
+        assert ((dut.TimingFSMi.BankFSM[0][1] == 5'h0a) || (i==0)) $display("OK: precharge"); else $display(dut.TimingFSMi.BankFSM[0][1]);
+        ba = 0;
+        A = 17'b00000000000000000;
+        sync[0][1] = 0;
+        #((T_RP-1)*tCK);
+        assert (dut.TimingFSMi.BankFSM[0][1] == 5'h00) $display("OK: idle"); else $display(dut.TimingFSMi.BankFSM[0][1]);
+        #(2*tCK);
+
+        $display("total number of clockcycles after a rowclone transfer, three AMBIT operations, and a LISA subarray movement test: %d", dut.ideal_total_cycles);
+        $display("======= Number of cycles within the RowClone state within that time: %d", dut.ideal_rowclone_cycles);
+        $display("======= Number of cycles within the AMBIT Operation state within that time: %d", dut.ideal_ambit_cycles);
+        $display("======= Number of cycles while in LISA's RBM state within that time: %d", dut.ideal_lisa_cycles);
+
+        // Re-initialize all inputs and start tracking used clock cycles again
+        reset_n = 0; // DRAM is active only when this signal is HIGH
+        ck_tp = 1;
+        ck_cn = 0;
+        ck2x = 1;
+        cke = 1;
+        cs_n = {RANKS{1'b1}}; // LOW makes rank active
+        act_n = 1; // no ACT
+        A = {ADDRWIDTH{1'b0}};
+        bg = 0;
+        ba = 0;
+        dq_reg = {DQWIDTH{1'b0}};
+        dqs_tp_reg = {CHIPS{1'b0}};
+        dqs_cn_reg = {CHIPS{1'b1}};
+        odt = 0;
+        parity = 0;
+        writing = 0;
+        for (i = 0; i < BANKGROUPS; i = i + 1)
+        begin
+            for (j = 0; j < BANKSPERGROUP; j = j + 1)
+            begin
+                sync[i][j] = 0;
+            end
+        end
+        #(tCK*0.99) // use a propagation delay because of (suspected) bug in Vivado Simulator
+        
+        // reset high
+        reset_n = 1;
+        cs_n = 1'b0; // LOW makes rank active
+        #tCK;
+
+        // confirm that Memory Controller is in StateTimingIdle
+        for (i = 0; i < BANKGROUPS; i = i + 1)
+        begin
+            for (j = 0; j < BANKSPERGROUP; j = j + 1)
+            begin
+                assert (dut.TimingFSMi.BankFSM[i][j] == 5'h00) $display("OK: StateTimingIdle"); else $display(dut.TimingFSMi.BankFSM[i][j]);
+            end
+        end
+        #tCK;
+
         // ==========================================
         // 9. XOR test using Ambit and RowClone
         //  SUM = A xor B = A * ~B + ~A * B 
@@ -774,12 +832,10 @@ module testbnch_DIMM();
         assert (dut.TimingFSMi.BankFSM[0][1] == 5'h00) $display("OK: idle"); else $display(dut.TimingFSMi.BankFSM[0][1]);
         #(2*tCK);
 
-        $display("total number of clockcycles after a rowclone transfer, three AMBIT operations, and a LISA subarray movement test: %d", dut.ideal_total_cycles);
+        $display("total number of clockcycles after XOR calculation using RowClone and AMBIT operations: %d", dut.ideal_total_cycles);
         $display("======= Number of cycles within the RowClone state within that time: %d", dut.ideal_rowclone_cycles);
         $display("======= Number of cycles within the AMBIT Operation state within that time: %d", dut.ideal_ambit_cycles);
         $display("======= Number of cycles while in LISA's RBM state within that time: %d", dut.ideal_lisa_cycles);
-        
-
         
         $stop();
     end;
