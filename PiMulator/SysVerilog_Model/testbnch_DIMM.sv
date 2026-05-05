@@ -48,6 +48,13 @@ module testbnch_DIMM();
     localparam row_address_C = 644;
     localparam ambit_result_row = 333;
 
+    // Addresses for AMBIT addition test
+    localparam row_address_NOT_A = 360;
+    localparam row_address_NOT_B = 370;
+    localparam row_address_A_AND_NOT_B = 400;
+    localparam row_address_NOT_A_AND_B = 450;
+    localparam row_address_A_AND_NOT_B_or_NOT_A_AND_B = 460;
+
     logic reset_n;
     logic RBM;
     logic ambit_NOT_OP;
@@ -178,20 +185,20 @@ module testbnch_DIMM();
     logic [DQWIDTH-1:0] operand_A_test_data [0:BL-1] = {
         64'hfbbbbbbbbbbbbbbb,
         64'haaaaaaaaaaaaaaaa,
-        64'haaaaaaaaaaaaaaaa,
-        64'haaaaaaaaaaaaaaaa,
-        64'haaaaaaaaaaaaaaaa,
+        64'h0000000003300000,
+        64'h0000000000022000,
+        64'h0000000000000110,
         64'haaaaaaaaaaaaaaaa,
         64'haaaaaaaaaaaaaaaa,
         64'hbbbbbbbbbbbbbbbf
     };
 
     logic [DQWIDTH-1:0] operand_B_test_data [0:BL-1] = {
-        64'hfccccccccccccccc,
+        64'h000ccccccccccccc,
         64'haaaaaaaaaaaaaaaa,
-        64'haaaaaaaaaaaaaaaa,
-        64'haaaaaaaaaaaaaaaa,
-        64'haaaaaaaaaaaaaaaa,
+        64'h0000000043300000,
+        64'h0aa0000000022000,
+        64'h0000000000000110,
         64'haaaaaaaaaaaaaaaa,
         64'haaaaaaaaaaaaaaaa,
         64'hcccccccccccccccf
@@ -199,7 +206,12 @@ module testbnch_DIMM();
 
     logic [DQWIDTH-1:0] operand_A_AND_operand_B_test_result [0:BL-1];
     logic [DQWIDTH-1:0] operand_A_OR_operand_B_test_result [0:BL-1];
+    logic [DQWIDTH-1:0] operand_A_XOR_B_test_result [0:BL-1];
 
+    logic [DQWIDTH-1:0] expected_data_A_inverted [0:BL-1];
+    logic [DQWIDTH-1:0] expected_data_B_inverted [0:BL-1];
+    logic [DQWIDTH-1:0] expected_data_A_AND_NOT_B [0:BL-1];
+    logic [DQWIDTH-1:0] expected_data_NOT_A_AND_B [0:BL-1];
     logic [DQWIDTH-1:0] expected_data_D_inverted [0:BL-1];
     // Bitwise AND operation
     always_comb begin
@@ -219,6 +231,37 @@ module testbnch_DIMM();
             expected_data_D_inverted[i] = ~expected_data_D[i];
         end
     end
+    // Bitwise NOT operation
+    always_comb begin
+        foreach (expected_data_A_inverted[i]) begin
+            expected_data_A_inverted[i] = ~operand_A_test_data[i];
+        end
+    end
+    // Bitwise NOT operation
+    always_comb begin
+        foreach (expected_data_B_inverted[i]) begin
+            expected_data_B_inverted[i] = ~operand_B_test_data[i];
+        end
+    end
+    // Sum operation
+    always_comb begin
+        foreach (operand_A_XOR_B_test_result[i]) begin
+            operand_A_XOR_B_test_result[i] = operand_A_test_data[i] ^ operand_B_test_data[i];
+        end
+    end
+    // XOR part a operation
+    always_comb begin
+        foreach (expected_data_A_AND_NOT_B[i]) begin
+            expected_data_A_AND_NOT_B[i] = operand_A_test_data[i] & expected_data_B_inverted[i];
+        end
+    end
+    // XOR part b operation
+    always_comb begin
+        foreach (expected_data_NOT_A_AND_B[i]) begin
+            expected_data_NOT_A_AND_B[i] = expected_data_A_inverted[i] & operand_B_test_data[i];
+        end
+    end
+
 
     // 1. Activate a Row (Must be act_n = 0)
     task activate_row(input [ADDRWIDTH-1:0] row_address);
@@ -383,7 +426,19 @@ module testbnch_DIMM();
         precharge_bank();
     endtask
 
-    task trigger_ambit_NOT_operation(input [ADDRWIDTH-1:0] B_GroupAddress, input [ADDRWIDTH-1:0] Data_GroupAddress);
+    // task trigger_ambit_NOT_operation(input [ADDRWIDTH-1:0] B_GroupAddress, input [ADDRWIDTH-1:0] Data_GroupAddress);
+    //     ambit_NOT_OP = 1'b1;
+    //     activate_row(Data_GroupAddress);
+    //     trigger_rowclone(B_GroupAddress);
+    //     precharge_bank();
+    //     ambit_NOT_OP = 1'b0;
+        
+    //     activate_row(B_GroupAddress);
+    //     trigger_rowclone(Data_GroupAddress);
+    //     precharge_bank();
+    // endtask
+
+    task trigger_ambit_NOT_operation(input [ADDRWIDTH-1:0] B_GroupAddress, input [ADDRWIDTH-1:0] Data_GroupAddress, input [ADDRWIDTH-1:0] target_address);
         ambit_NOT_OP = 1'b1;
         activate_row(Data_GroupAddress);
         trigger_rowclone(B_GroupAddress);
@@ -391,7 +446,7 @@ module testbnch_DIMM();
         ambit_NOT_OP = 1'b0;
         
         activate_row(B_GroupAddress);
-        trigger_rowclone(Data_GroupAddress);
+        trigger_rowclone(target_address);
         precharge_bank();
     endtask
 
@@ -619,15 +674,93 @@ module testbnch_DIMM();
         // 3. Precharge the bank.
         // 4. Copy data from d-wordline of DCC to row R (RowClone)
 
-        // T2 initialized to all 0s to perform AND operation on T0 and T1
         write_data_to_row(row_address_C, expected_data_D);
 
         precharge_bank();
-        // Activate designated rows T0, T1, and T2 simultaneously
-        trigger_ambit_NOT_operation(n_DCC0, row_address_C);
+        trigger_ambit_NOT_operation(n_DCC0, row_address_C, row_address_C);
 
         read_row_data_and_verify_expected_result(n_DCC0, expected_data_D_inverted);
         read_row_data_and_verify_expected_result(row_address_C, expected_data_D_inverted);
+
+
+        // ==========================================
+        // 9. XOR test using Ambit and RowClone
+        //  SUM = A xor B = A * ~B + ~A * B 
+        // ==========================================
+        write_data_to_row(row_address_A, operand_A_test_data);
+        precharge_bank();
+        write_data_to_row(row_address_B, operand_B_test_data);
+        precharge_bank();
+
+        // Store inverse of A and inverse of B
+        trigger_ambit_NOT_operation(n_DCC0, row_address_A, row_address_NOT_A);
+        precharge_bank();
+        trigger_ambit_NOT_operation(n_DCC0, row_address_B, row_address_NOT_B);
+        precharge_bank();
+        // Test that inverse operation worked
+        read_row_data_and_verify_expected_result(row_address_NOT_A, expected_data_A_inverted);
+        read_row_data_and_verify_expected_result(row_address_NOT_B, expected_data_B_inverted);
+        
+
+
+        // Apply the two AND operations
+        // AND operation A * ~B
+        `ifdef RowClone // Copy data of row A to designated row T0
+        activate_row(row_address_A);                 // Step 1: Open the Source
+        trigger_rowclone(T1);             // Step 2: Open the Dest (Triggers copy!)
+        precharge_bank();
+        `endif
+        `ifdef RowClone // Copy data of row B to designated row T1
+        activate_row(row_address_NOT_B);                 // Step 1: Open the Source
+        trigger_rowclone(T2);             // Step 2: Open the Dest (Triggers copy!)
+        precharge_bank();
+        `endif
+        // T2 initialized to all 0s to perform AND operation on T0 and T1
+        write_data_to_row(T3, test_data_all_0s);
+        precharge_bank();
+        // Activate designated rows T0, T1, and T2 simultaneously
+        trigger_ambit_operation(T1_T2_T3, row_address_A_AND_NOT_B);
+        // verify that A * ~B worked correctly
+        read_row_data_and_verify_expected_result(row_address_A_AND_NOT_B, expected_data_A_AND_NOT_B);
+
+        // AND operation ~A * B
+        `ifdef RowClone // Copy data of row A to designated row T0
+        activate_row(row_address_NOT_A);                 // Step 1: Open the Source
+        trigger_rowclone(T1);             // Step 2: Open the Dest (Triggers copy!)
+        precharge_bank();
+        `endif
+        `ifdef RowClone // Copy data of row B to designated row T1
+        activate_row(row_address_B);                 // Step 1: Open the Source
+        trigger_rowclone(T2);             // Step 2: Open the Dest (Triggers copy!)
+        precharge_bank();
+        `endif
+        // T2 initialized to all 0s to perform AND operation on T0 and T1
+        write_data_to_row(T3, test_data_all_0s);
+        precharge_bank();
+        // Activate designated rows T0, T1, and T2 simultaneously
+        trigger_ambit_operation(T1_T2_T3, row_address_NOT_A_AND_B);
+        // verify that A * ~B worked correctly
+        read_row_data_and_verify_expected_result(row_address_NOT_A_AND_B, expected_data_NOT_A_AND_B);
+
+
+        // apply the last OR operation
+        `ifdef RowClone // Copy data of row A to designated row T0
+        activate_row(row_address_A_AND_NOT_B);                 // Step 1: Open the Source
+        trigger_rowclone(T1);             // Step 2: Open the Dest (Triggers copy!)
+        precharge_bank();
+        `endif
+        `ifdef RowClone // Copy data of row B to designated row T1
+        activate_row(row_address_NOT_A_AND_B);                 // Step 1: Open the Source
+        trigger_rowclone(T2);             // Step 2: Open the Dest (Triggers copy!)
+        precharge_bank();
+        `endif
+        // T2 initialized to all 1s to perform OR operation on T0 and T1
+        write_data_to_row(T3, test_data_all_1s);
+        precharge_bank();
+        // Activate designated rows T0, T1, and T2 simultaneously
+        trigger_ambit_operation(T1_T2_T3, row_address_A_AND_NOT_B_or_NOT_A_AND_B);
+        // Final verification of XOR test
+        read_row_data_and_verify_expected_result(row_address_A_AND_NOT_B_or_NOT_A_AND_B, operand_A_XOR_B_test_result);
 
         // precharge and back to idle
         ba = 1;

@@ -67,9 +67,9 @@ module bank_array #(
                 //         ~memory_array[{addr, c[COLWIDTH-1:0]}];
                 memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= 
                         ~memory_array[{src_row, c[COLWIDTH-1:0]}];
-                if (c == 0) begin
-                    $display("BANK ARRAY - OK: AMBITing NOT row %d to (cached) row address %d", virt_src_row, AmbitOp1RowId);
-                end
+                // if (c == 0) begin
+                //     $display("BANK ARRAY - OK: AMBITing NOT row %d to (cached) row address %d", virt_src_row, AmbitOp1RowId);
+                // end
                 
                 // // Check if T2 (AmbitOp3) is initialized to 0 for this specific column
                 // if (|memory_array[{AmbitOp3RowId, c[COLWIDTH-1:0]}] == 0) begin
