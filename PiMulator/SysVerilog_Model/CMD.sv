@@ -51,12 +51,15 @@ module CMD
     // - - and CAS - Column Address Strobe (A0-A9 used for column at this times)
     // A10 which is an unused bit during CAS is overloaded to indicate Auto-Precharge
     logic A16, A15, A14, A10;
+    logic A11;
     assign A16 = A[ADDRWIDTH-1]; // RAS_n
     assign A15 = A[ADDRWIDTH-2]; // CAS_n
     assign A14 = A[ADDRWIDTH-3]; // WE_n
     assign A10 = A[ADDRWIDTH-4]; // AP
+    assign A11 = A[ADDRWIDTH-5]; // Usually unused. Now acts as RPM_en for LISA
     
     logic ACT, BST, CFG, CKEH, CKEL, DPD, DPDX, MRR, MRW, PD, PDX, PR, PRA, RD, RDA, REF, SRF, WR, WRA;
+    // logic RBM;
     
     // implement ddr command decoding logic using truth table // todo: implement all commands not just a few
     assign ACT  = (!cs_n && !act_n); // entire A is the Row Address at this time
@@ -71,6 +74,7 @@ module CMD
     assign PD   = 0;
     assign PDX  = 0;
     assign PR   = (!cs_n && act_n && !A16 &&  A15 && !A14 && !A10); // PRE
+    // assign RBM  = (!cs_n && act_n && !A16 &&  A15 && !A14 && !A10 &&  A11); // NEW LISA RBM Command (Precharge pattern + A11 HIGH)
     assign PRA  = (!cs_n && act_n && !A16 &&  A15 && !A14 &&  A10); // PREA Precharge all Banks
     assign RD   = (!cs_n && act_n &&  A16 && !A15 &&  A14 && !A10);
     assign RDA  = (!cs_n && act_n &&  A16 && !A15 &&  A14 &&  A10);
@@ -80,6 +84,7 @@ module CMD
     assign WRA  = (!cs_n && act_n &&  A16 && !A15 && !A14 &&  A10);
     
     assign commands = {ACT, BST, CFG, CKEH, CKEL, DPD, DPDX, MRR, MRW, PD, PDX, PR, PRA, RD, RDA, REF, SRF, WR, WRA};
+    // assign commands = {RBM, ACT, BST, CFG, CKEH, CKEL, DPD, DPDX, MRR, MRW, PD, PDX, PR, PRA, RD, RDA, REF, SRF, WR, WRA};
     
     // RAS = Row Address Strobe;
     // the idea here is to store the address A during an activate command

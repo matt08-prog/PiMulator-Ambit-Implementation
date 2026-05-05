@@ -59,86 +59,16 @@ module bank_array #(
                                 memory_array[{AmbitOp1RowId, c[COLWIDTH-1:0]}] | 
                                 memory_array[{AmbitOp2RowId, c[COLWIDTH-1:0]}];
                         end
-                        
                     end
                 end
-                // Add other BITWISE_GROUP cases here...
-            // endcase
         end else if (rowclone_en) begin
             // NEW: Bulk copy the entire row in simulation.
             // Note: This works perfectly in ModelSim emulation, but for actual FPGA 
             // synthesis, you would need to pipeline this or use a custom dual-port BRAM.
             for (int c = 0; c < (1<<COLWIDTH); c++) begin
-                // addr[$clog2(DEPTH)-1:COLWIDTH] extracts the destination row
-                
-                case (src_row[$clog2(DEPTH)-1 : COLWIDTH])
-                    T0_T1_T2:    begin 
-                        // if (|memory_array[T2[$clog2(DEPTH)-1 : COLWIDTH]] == 0) begin // all bits are 0 so this is an AND operation
-                        // memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= memory_array[{T0[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] & memory_array[{T1[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}];
-                        
-                        // Debug statement
-                        // if (c == 0) begin
-                        //     $display("BANK ARRAY - OK: AMBITing AND row %d to row address %d into row %d", T0, T1, addr);
-                        // end
-                        memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= memory_array[{T0, c[COLWIDTH-1:0]}] & memory_array[{T0, c[COLWIDTH-1:0]}];
-                        // end
-                    end
-                    default:    begin
-                        memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= memory_array[{src_row, c[COLWIDTH-1:0]}];
-                        
-                        // Debug statement
-                        // if (c == 0) begin
-                        //     $display("BANK ARRAY - OK: rowcloning from row %d to row address %d and column address %d", src_row[$clog2(DEPTH)-1 : COLWIDTH], addr[$clog2(DEPTH)-1 : COLWIDTH], addr[COLWIDTH-1:0]);
-                        // end
-                    end
-                endcase
+                memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= memory_array[{src_row, c[COLWIDTH-1:0]}];
             end
         end
-        //     for (int c = 0; c < (1<<COLWIDTH); c++) begin
-        //         if (|memory_array[{T2[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] == 0) begin // all bits are 0 so this is an AND operation
-        //             if (c == 0) begin
-        //                 $display("BANK ARRAY - OK: AMBITing AND row %d to row address %d into row %d", AmbitOp1RowId, AmbitOp2RowId, addr);
-        //             end
-        //             memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= memory_array[{AmbitOp1RowId, c[COLWIDTH-1:0]}] & memory_array[{AmbitOp2RowId, c[COLWIDTH-1:0]}];
-        //         end
-        //         // case (src_row)
-        //         //     T0_T1_T2:    begin 
-        //         //         if (|memory_array[T2[$clog2(DEPTH)-1 : COLWIDTH]] == 0) begin // all bits are 0 so this is an AND operation
-        //         //             memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= memory_array[{T0[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] & memory_array[{T1[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}];
-        //         //         end
-        //         //     end
-                    
-        //             // GREEN:  begin light = 3'b001; next_state = YELLOW; end
-        //             // YELLOW: begin light = 3'b010; next_state = RED;    end
-        //             // default: begin light = 3'b100; next_state = RED;    end // Safety default
-        //         // endcase
-                    
-        //             // addr[$clog2(DEPTH)-1:COLWIDTH] extracts the destination row
-        //             // memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] & memory_array[{src_row, c[COLWIDTH-1:0]}];
-        //     end
-        // end
-
-        // else if (ambit_en) begin
-        //     for (int c = 0; c < (1<<COLWIDTH); c++) begin
-                
-        //         // If T2 is all 0s, perform AND
-        //         if (|memory_array[{cT2_RowId, c[COLWIDTH-1:0]}] == 0) begin 
-        //             // memory[dest] = memory[T0] & memory[T1]
-        //             memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= 
-        //                 memory_array[{cT0_RowId, c[COLWIDTH-1:0]}] & 
-        //                 memory_array[{cT1_RowId, c[COLWIDTH-1:0]}];
-        //         end
-                
-        //         // If T2 is all 1s, perform OR
-        //         else if (&memory_array[{cT2_RowId, c[COLWIDTH-1:0]}] == 1) begin 
-        //             // memory[dest] = memory[T0] | memory[T1]
-        //             memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= 
-        //                 memory_array[{cT0_RowId, c[COLWIDTH-1:0]}] | 
-        //                 memory_array[{cT1_RowId, c[COLWIDTH-1:0]}];
-        //         end
-
-        //     end
-        // end
 
         else if (rd_o_wr) begin
             memory_array[addr] <= i_data;

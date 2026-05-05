@@ -13,12 +13,13 @@ module TimingFSM
     input logic reset_n,
     input logic [BGWIDTH-1:0]bg, // bankgroup address, BG0-BG1 in x4/8 and BG0 in x16
     input logic [BAWIDTH-1:0]ba, // bank address
-    input logic [18:0] commands,
+    input logic [19:0] commands,
     output logic [4:0] BankFSM [BANKGROUPS-1:0][BANKSPERGROUP-1:0]
     );
     
     // TODO: make memory timings registers writeable by the memory controller
     logic [7:0] T_CL, T_RCD, T_RP, T_RFC, T_WR, T_RTP, T_CWL, T_ABA, T_ABAR, T_RAS;
+    logic [7:0] T_RBM;
     logic [15:0] T_REFI;
     assign T_CL   = 8'd17;
     assign T_RCD  = 8'd17;
@@ -31,9 +32,12 @@ module TimingFSM
     assign T_ABAR = 8'd24;
     assign T_RAS  = 8'd32;
     assign T_REFI = 16'd9360;
+    assign T_RBM = 8'd5; // Row Buffer Movement (RBM) Through LISA latency Time
     
     logic ACT, BST, CFG, CKEH, CKEL, DPD, DPDX, MRR, MRW, PD, PDX, PR, PRA, RD, RDA, REF, SRF, WR, WRA;
+    logic RBM; // Added LISA command
     
+    assign RBM = commands[19]; // Added LISA command
     assign ACT = commands[18];
     assign BST = commands[17];
     assign CFG = commands[16];
@@ -74,6 +78,7 @@ module TimingFSM
                 .PD(  ((bg==bgi)&&(ba==bi))? PD   : 1'b0),
                 .PDX( ((bg==bgi)&&(ba==bi))? PDX  : 1'b0),
                 .PR(  ((bg==bgi)&&(ba==bi))? PR   : 1'b0),
+                .RBM(  ((bg==bgi)&&(ba==bi))? RBM   : 1'b0), // Added LISA command
                 .PRA( ((bg==bgi)&&(ba==bi))? PRA  : 1'b0),
                 .RD(  ((bg==bgi)&&(ba==bi))? RD   : 1'b0),
                 .RDA( ((bg==bgi)&&(ba==bi))? RDA  : 1'b0),
@@ -92,8 +97,10 @@ module TimingFSM
                 .T_ABAR(T_ABAR),
                 .T_RAS(T_RAS),
                 .T_REFI(T_REFI),
+                .T_RBM(T_RBM),
                 .BSTct(), .tABARct(), .tABAct(), .tCLct(), .tCWLct(), .tRASct(),
                 .tRCDct(), .tREFIct(), .tRFCct(), .tRPct(), .tRTPct(), .tWRct(),
+                .tRBMct(),
                 .clk(clk),
                 .rst(!reset_n)
                 );

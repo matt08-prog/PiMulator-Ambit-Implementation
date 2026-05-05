@@ -7,6 +7,7 @@ module BankGroup
     parameter COLWIDTH = 10,
     parameter DEVICE_WIDTH = 4,
     parameter CHWIDTH = 5,
+    parameter BANKARRAYSPERBANK = 1,
     
     localparam BANKSPERGROUP = 2**BAWIDTH
     )
@@ -34,7 +35,8 @@ module BankGroup
         begin:B
             Bank #(.DEVICE_WIDTH(DEVICE_WIDTH),
             .COLWIDTH(COLWIDTH),
-            .CHWIDTH(CHWIDTH)) Bi (
+            .CHWIDTH(CHWIDTH),
+            .BANKARRAYSPERBANK(BANKARRAYSPERBANK)) Bi (
             .clk(clk),
             .rd_o_wr(rd_o_wr[bi]),
             .rowclone_en(rowclone_en[bi]), // FIX: Added [bi] slice

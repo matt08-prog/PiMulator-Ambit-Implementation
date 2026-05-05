@@ -14,6 +14,7 @@ module memtiming #(parameter int BL = 8) (
   output logic [7:0] tRPct,    // Precharge counter
   output logic [7:0] tRTPct,   // Reead to Precharge Delay counter
   output logic [7:0] tWRct,    // Write to precharge delay counter
+  output logic [7:0] tRBMct,    // Row Buffer Movement (RBM) Through LISA delay counter
   input logic ACT,
   input logic BST,
   input logic CFG,
@@ -26,6 +27,7 @@ module memtiming #(parameter int BL = 8) (
   input logic PD,
   input logic PDX,
   input logic PR,
+  input logic RBM, // Added LISA RBM command
   input logic PRA,
   input logic RD,
   input logic RDA,
@@ -42,6 +44,7 @@ module memtiming #(parameter int BL = 8) (
   input logic [7:0] T_RP,
   input logic [7:0] T_RTP,
   input logic [7:0] T_WR,
+  input logic [7:0] T_RBM,
   input logic WR,
   input logic WRA,
   input logic clk,
@@ -71,7 +74,8 @@ module memtiming #(parameter int BL = 8) (
     Writing        = 5'b10010, 
     WritingAPR     = 5'b10011, 
     ZRowClone      = 5'b10100,
-    ZAMBIT_OP      = 5'b10101
+    ZAMBIT_OP      = 5'b10101,
+    ZLISA          = 5'b10110 // 5'd22
   } state, nextstate;
 
   assign stateout = state;  // <--- ADD THIS LINE
@@ -141,7 +145,10 @@ module memtiming #(parameter int BL = 8) (
         else if (CKEL) begin
           nextstate = ActivePD;
         end
-        else if (ACT) begin
+        else if (ACT && RBM) begin
+          nextstate = ZLISA;
+        end
+        else if (ACT && !RBM) begin
           nextstate = ZRowClone;
         end
       end
@@ -280,6 +287,14 @@ module memtiming #(parameter int BL = 8) (
           nextstate = ZAMBIT_OP;
         end
       end
+      ZLISA     : begin
+        if (tRCDct==8'd1) begin
+          nextstate = BankActive;
+        end
+        else begin
+          nextstate = ZLISA;
+        end
+      end
     endcase
   end
 
@@ -308,6 +323,7 @@ module memtiming #(parameter int BL = 8) (
       tRPct[7:0] <= T_RP;
       tRTPct[7:0] <= T_RTP;
       tWRct[7:0] <= T_WR;
+      tRBMct[7:0] <= T_RBM;
     end
     else begin
       BSTct[7:0] <= BL; // default
@@ -322,6 +338,7 @@ module memtiming #(parameter int BL = 8) (
       tRPct[7:0] <= T_RP; // default
       tRTPct[7:0] <= T_RTP; // default
       tWRct[7:0] <= T_WR; // default
+      tRBMct[7:0] <= T_RBM; // default
       case (nextstate)
         Idle          : begin
           tREFIct[15:0] <= (tREFIct>1)?tREFIct-1:tREFIct;
@@ -376,6 +393,12 @@ module memtiming #(parameter int BL = 8) (
           tRCDct[7:0] <= tRCDct-1;
         end
         ZAMBIT_OP     : begin
+          tCLct[7:0] <= tCLct;
+          tCWLct[7:0] <= tCWLct;
+          tRASct[7:0] <= (tRASct>0)?tRASct-1:tRASct;
+          tRCDct[7:0] <= tRCDct-1;
+        end
+        ZLISA     : begin
           tCLct[7:0] <= tCLct;
           tCWLct[7:0] <= tCWLct;
           tRASct[7:0] <= (tRASct>0)?tRASct-1:tRASct;

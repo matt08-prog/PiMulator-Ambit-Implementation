@@ -4,6 +4,8 @@ module Bank
   #(parameter DEVICE_WIDTH = 4,
   parameter COLWIDTH = 10,
   parameter CHWIDTH = 5,
+  parameter BANKARRAYSPERBANK = 1,
+
   localparam COLS = 2**COLWIDTH, 
   localparam CHROWS = 2**CHWIDTH, 
   localparam DEPTH = COLS*CHROWS) 
@@ -23,23 +25,29 @@ module Bank
   input  logic [COLWIDTH-1:0]     column
   );
 
-  bank_array #(
-      .WIDTH(DEVICE_WIDTH), 
-      .DEPTH(DEPTH), 
-      .COLWIDTH(COLWIDTH),   // NEW
-      .CHWIDTH(CHWIDTH)      // NEW
-  ) arrayi (
-      .clk(clk),
-      .addr({row, column}),
-      .rd_o_wr(rd_o_wr), 
-      .rowclone_en(rowclone_en), // NEW
-      .src_row(src_row),         // NEW
-      .virt_src_row(virt_src_row),
-      .AmbitOp1RowId(AmbitOp1RowId),
-      .AmbitOp2RowId(AmbitOp2RowId),
-      .AmbitOp3RowId(AmbitOp3RowId),
-      .ambit_en(ambit_en), 
-      .i_data(dqin),
-      .o_data(dqout)
-  );
+    genvar bai;
+    generate
+        for (bai = 0; bai < BANKARRAYSPERBANK; bai=bai+1)
+        begin:BA
+            bank_array #(
+                .WIDTH(DEVICE_WIDTH), 
+                .DEPTH(DEPTH), 
+                .COLWIDTH(COLWIDTH),   // NEW
+                .CHWIDTH(CHWIDTH)      // NEW
+            ) arrayi (
+                .clk(clk),
+                .addr({row, column}),
+                .rd_o_wr(rd_o_wr), 
+                .rowclone_en(rowclone_en), // NEW
+                .src_row(src_row),         // NEW
+                .virt_src_row(virt_src_row),
+                .AmbitOp1RowId(AmbitOp1RowId),
+                .AmbitOp2RowId(AmbitOp2RowId),
+                .AmbitOp3RowId(AmbitOp3RowId),
+                .ambit_en(ambit_en), 
+                .i_data(dqin),
+                .o_data(dqout)
+            );
+        end
+    endgenerate
 endmodule

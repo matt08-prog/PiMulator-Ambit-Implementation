@@ -11,6 +11,7 @@ module testbnch_DIMM();
     parameter CHIPS = 16;
     parameter BGWIDTH = 2;
     parameter BANKGROUPS = 2**BGWIDTH;
+    parameter BANKARRAYSPERBANK = 1;
     parameter BAWIDTH = 2;
     parameter ADDRWIDTH = 17;
     parameter COLWIDTH = 10;
@@ -39,6 +40,7 @@ module testbnch_DIMM();
     localparam T_ABAR = 24;
     localparam T_RAS  = 32;
     localparam T_REFI = 9360;
+    localparam T_RBM = 5;
     
     // AMBIT parameters
     localparam row_address_A = 956;
@@ -46,6 +48,7 @@ module testbnch_DIMM();
     localparam ambit_result_row = 333;
 
     logic reset_n;
+    logic RBM;
     logic ck2x;
     logic ck_cn;
     logic ck_tp;
@@ -85,6 +88,7 @@ module testbnch_DIMM();
     .CHIPS(CHIPS),
     .BGWIDTH(BGWIDTH),
     .BANKGROUPS(BANKGROUPS),
+    .BANKARRAYSPERBANK(BANKARRAYSPERBANK),
     .BAWIDTH(BAWIDTH),
     .ADDRWIDTH(ADDRWIDTH),
     .COLWIDTH(COLWIDTH),
@@ -93,6 +97,7 @@ module testbnch_DIMM();
     .CHWIDTH(CHWIDTH)
     ) dut (
     .reset_n(reset_n),
+    .RBM(RBM),
     .ck2x(ck2x),
     .ck_cn(ck_cn),
     .ck_tp(ck_tp),
@@ -270,12 +275,34 @@ module testbnch_DIMM();
         #(tCK*(T_ABA-BL+4)); // Wait out the burst
     endtask
 
-    // 4. Trigger RowClone
+    // Trigger RowClone
     task trigger_rowclone(input [ADDRWIDTH-1:0] destination_row);
         // We do NOT call activate_row() here, because the source row must ALREADY be open!
         #(tCK*5); 
         act_n = 0;
         ba = 1;
+        RBM = 1'b0;
+        A = destination_row; // The second back-to-back ACT triggers the clone
+        sync[0][1] = 1;
+        #tCK;
+        act_n = 1;
+        A = 17'b0;
+        
+        // Wait for the physical T_RCD delay so the FSM finishes the copy 
+        // and returns to the 'BankActive' state
+        #(tCK*(T_RCD + 2)); 
+        sync[0][1] = 0;
+        
+        #(tCK*T_CL); // FIX: Wait for the FSM's post-activation cooldown timer!
+    endtask
+
+    // Trigger LISA operation
+    task trigger_LISA(input [ADDRWIDTH-1:0] destination_row);
+        // We do NOT call activate_row() here, because the source row must ALREADY be open!
+        #(tCK*5);
+        act_n = 0;
+        ba = 1;
+        RBM = 1'b1;
         A = destination_row; // The second back-to-back ACT triggers the clone
         sync[0][1] = 1;
         #tCK;
@@ -523,8 +550,31 @@ module testbnch_DIMM();
 
         read_row_data_and_verify_expected_result(ambit_result_row, operand_A_AND_operand_B_test_result);
 
+        // ==========================================
+        // 7. LISA Subarray movement test
+        // ==========================================
+        
+        // Write Data A to Row 1
+        write_rand_data(17'd1, expected_data_A);
+        precharge_bank(); // MUST CLOSE BEFORE OPENING ROW 8!
 
+        // Write Data B to Row 2
+        write_rand_data(17'd2, expected_data_B);
+        precharge_bank(); // MUST CLOSE BEFORE OPENING ROW 32!
 
+        // Write Data C to Row 88
+        write_rand_data(17'd88, expected_data_C);
+        precharge_bank(); // MUST CLOSE BEFORE ROWCLONE!
+
+        // RowClone Row 1 to Row 3 (destination in same subarray as source)
+        `ifdef RowClone
+        activate_row(17'd1);                 // Step 1: Open the Source
+        trigger_LISA(17'd3);             // Step 2: Open the Dest (Triggers copy!)
+        precharge_bank(); // CLOSE AFTER  ROWCLONE!
+        `endif
+        
+        read_row_data_and_verify_expected_result(17'd1, expected_data_A);
+        read_row_data_and_verify_expected_result(17'd3, expected_data_A);
 
         // precharge and back to idle
         ba = 1;

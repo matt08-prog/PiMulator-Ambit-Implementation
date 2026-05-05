@@ -17,6 +17,7 @@ module Chip
     parameter COLWIDTH = 10,
     parameter DEVICE_WIDTH = 4,
     parameter CHWIDTH = 5,
+    parameter BANKARRAYSPERBANK = 1,
     
     localparam BANKSPERGROUP = 2**BAWIDTH,
     localparam COLS = 2**COLWIDTH
@@ -49,7 +50,8 @@ module Chip
             BankGroup #(.BAWIDTH(BAWIDTH),
             .COLWIDTH(COLWIDTH),
             .DEVICE_WIDTH(DEVICE_WIDTH),
-            .CHWIDTH(CHWIDTH)) BGi (
+            .CHWIDTH(CHWIDTH),
+            .BANKARRAYSPERBANK(BANKARRAYSPERBANK)) BGi (
             .clk(clk),
             .rd_o_wr(rd_o_wr[bgi]),
             .rowclone_en(rowclone_en[bgi]), // FIX: Added [bgi] slice

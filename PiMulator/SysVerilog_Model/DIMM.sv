@@ -10,6 +10,7 @@ module DIMM // top MEMulator module with DIMM interface
   parameter CHIPS = 16, // number of Chips per Rank
   parameter BGWIDTH = 2, // width of Bank Groups, set to 1 for DDR3 and prior gen
   parameter BANKGROUPS = 2**BGWIDTH, // number of Bank Groups, set to 1 for DDR3 and prior gen
+  parameter BANKARRAYSPERBANK = 1,
   parameter BAWIDTH = 2, // width of Banks per Bank Group
   parameter ADDRWIDTH = 17, // address width for number of rows in array
   parameter COLWIDTH = 10, // address width for number of columns in array
@@ -63,6 +64,7 @@ module DIMM // top MEMulator module with DIMM interface
   `ifdef DDR4
   input logic parity, // Command and Address parity; todo: parity is possibly of little use for FPGA model
   `endif
+  input logic RBM, // LISA command
   input logic reset_n, // DRAM is active only when this signal is HIGH
   
   output logic stall, // signal to stall system while MEMSync in Allocate or WriteBack state
@@ -163,7 +165,7 @@ module DIMM // top MEMulator module with DIMM interface
   .reset_n(reset_n),
   .bg(bg),
   .ba(ba),
-  .commands(commands),
+  .commands({RBM, commands}),
   .BankFSM(BankFSM)
   );
   
@@ -251,7 +253,8 @@ module DIMM // top MEMulator module with DIMM interface
                 rc_delay[bgi][bi] <= 8'b0;
             end else begin
                 // Shift the FSM state through the register
-                rc_delay[bgi][bi] <= {rc_delay[bgi][bi][6:0], (BankFSM[bgi][bi] == 5'h14)};
+                // We would enable rowclone if we are in ZRowClone or ZLISA states
+                rc_delay[bgi][bi] <= {rc_delay[bgi][bi][6:0], (BankFSM[bgi][bi] == 5'h14 || BankFSM[bgi][bi] == 5'h16)};
             end
         end
         
@@ -297,7 +300,8 @@ module DIMM // top MEMulator module with DIMM interface
         .BAWIDTH(BAWIDTH),
         .COLWIDTH(COLWIDTH),
         .DEVICE_WIDTH(DEVICE_WIDTH),
-        .CHWIDTH(CHWIDTH)) Ci (
+        .CHWIDTH(CHWIDTH),
+        .BANKARRAYSPERBANK(BANKARRAYSPERBANK)) Ci (
         .clk(clk),
         // all the information on the data bus is in these wire bundles below
         .rd_o_wr(rd_o_wr),
