@@ -192,7 +192,7 @@ module testbnch_DIMM();
             operand_A_AND_operand_B_test_result[i] = operand_A_test_data[i] & operand_B_test_data[i];
         end
     end
-    // Bitwise AND operation
+    // Bitwise OR operation
     always_comb begin
         foreach (operand_A_OR_operand_B_test_result[i]) begin
             operand_A_OR_operand_B_test_result[i] = operand_A_test_data[i] | operand_B_test_data[i];
@@ -587,7 +587,13 @@ module testbnch_DIMM();
         #((T_RP-1)*tCK);
         assert (dut.TimingFSMi.BankFSM[0][1] == 5'h00) $display("OK: idle"); else $display(dut.TimingFSMi.BankFSM[0][1]);
         #(2*tCK);
-        // $finish();
+
+        $display("total number of clockcycles after a rowclone transfer, three AMBIT operations, and a LISA subarray movement test: %d", dut.ideal_total_cycles);
+        $display("======= Number of cycles within the RowClone state within that time: %d", dut.ideal_rowclone_cycles);
+        $display("======= Number of cycles while in LISA's RBM state within that time: %d", dut.ideal_lisa_cycles);
+        
+        
+        
         $stop();
     end;
     

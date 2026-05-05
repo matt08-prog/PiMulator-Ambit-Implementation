@@ -154,7 +154,12 @@ add wave -noupdate -group "ChipBank" -label "row" /testbnch_DIMM/dut/R[0]/C[0]/C
 add wave -noupdate -group "ChipBank" -radix unsigned -label "column" /testbnch_DIMM/dut/R[0]/C[0]/Ci/column
 
 # Raw Array
-add wave -noupdate -label "memory_array" /testbnch_DIMM/dut/R[0]/C[0]/Ci/BG[1]/BGi/B[1]/Bi/arrayi/memory_array
+add wave -noupdate -label "memory_array" /testbnch_DIMM/dut/R[0]/C[0]/Ci/BG[1]/BGi/B[1]/Bi/BA[0]/arrayi/memory_array
+
+# Timing analysis
+add wave -noupdate -group "TimingAnalysis" -radix unsigned -label "ideal_total_cycles" /testbnch_DIMM/dut/ideal_total_cycles
+add wave -noupdate -group "TimingAnalysis" -radix unsigned -label "ideal_rowclone_cycles" /testbnch_DIMM/dut/ideal_rowclone_cycles
+add wave -noupdate -group "TimingAnalysis" -radix unsigned -label "ideal_lisa_cycles" /testbnch_DIMM/dut/ideal_lisa_cycles
 
 # Zoom to full
 wave zoom full

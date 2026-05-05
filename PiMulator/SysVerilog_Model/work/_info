@@ -11,7 +11,7 @@ cModel Technology
 Z0 d/home/matthewroloff/Documents/UCoder/embedded/PIMulator/PIMulator_Assignment_3/PiMulator/PiMulator/SysVerilog_Model
 vBank
 Z1 DXx6 sv_std 3 std 0 22 VYECXdT12H8WgbUP_5Y6:3
-Z2 !s110 1777957692
+Z2 !s110 1778005275
 !i10b 1
 !s100 e=OUe=HicNMIGnPFVeFmH1
 Z3 !s11b Dg1SIo80bB@j0V0VzS_@n1
@@ -28,7 +28,7 @@ Z5 OV;L;2020.1;71
 r1
 !s85 0
 31
-Z6 !s108 1777957692.000000
+Z6 !s108 1778005275.000000
 Z7 !s107 testbnch_TimingFSM.sv|testbnch_RefInterleaving.sv|testbnch_MEMSyncTop.sv|testbnch_MEMSync.sv|testbnch_DIMM.sv|testbnch_Chip.sv|testbnch_CMD.sv|testbnch_BankInterleaving.sv|testbnch_Bank.sv|memtiming.sv|bank_array.sv|WrappedDIMM.sv|TimingFSM.sv|MEMSyncTop.sv|MEMSync.sv|DIMM.sv|Chip.sv|CMD.sv|BankGroup.sv|Bank.sv|
 Z8 !s90 -reportprogress|300|Bank.sv|BankGroup.sv|CMD.sv|Chip.sv|DIMM.sv|MEMSync.sv|MEMSyncTop.sv|TimingFSM.sv|WrappedDIMM.sv|bank_array.sv|memtiming.sv|testbnch_Bank.sv|testbnch_BankInterleaving.sv|testbnch_CMD.sv|testbnch_Chip.sv|testbnch_DIMM.sv|testbnch_MEMSync.sv|testbnch_MEMSyncTop.sv|testbnch_RefInterleaving.sv|testbnch_TimingFSM.sv|
 !i113 1
@@ -137,17 +137,17 @@ vDIMM
 R1
 R2
 !i10b 1
-!s100 [9Y1N]N81NCEhA0SN``jS0
+!s100 ?jN63QfLV:^fY<a71?hm<1
 R3
-I4zZD8?bQ:URiQaDHA^VKN3
+IG4d5ej9z<o2e[4nAkmj_H3
 R4
 S1
 R0
-w1777957684
+w1778004941
 8DIMM.sv
 FDIMM.sv
 !i122 0
-L0 7 318
+L0 7 342
 R5
 r1
 !s85 0
@@ -336,17 +336,17 @@ vtestbnch_DIMM
 R1
 R2
 !i10b 1
-!s100 ]h06HJHN@Se5m;c5`?N]P1
+!s100 Y_Vck:SX3?`@j9]YEkVfR2
 R3
-I=Z9TZZEOPNY^>IJezVXR21
+Ib@D=GAXd0K2XH<2YbDV^j2
 R4
 S1
 R0
-w1777957504
+w1778005267
 8testbnch_DIMM.sv
 Ftestbnch_DIMM.sv
 !i122 0
-L0 8 587
+L0 8 590
 R5
 r1
 !s85 0

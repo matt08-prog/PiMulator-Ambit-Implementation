@@ -199,6 +199,30 @@ module DIMM // top MEMulator module with DIMM interface
   .stall(stall)
   );
   
+  // IDEAL DRAM PERFORMANCE PROFILER
+  logic [63:0] ideal_total_cycles;
+  logic [63:0] ideal_rowclone_cycles;
+  logic [63:0] ideal_lisa_cycles;
+
+  always_ff @(posedge clk) begin
+      if (!reset_n) begin
+          ideal_total_cycles <= 0;
+          ideal_rowclone_cycles <= 0;
+          ideal_lisa_cycles <= 0;
+      end 
+      // ONLY COUNT WHEN THE EMULATOR IS NOT STALLED!
+      else if (!stall) begin 
+          ideal_total_cycles <= ideal_total_cycles + 1;
+          
+          if (BankFSM[0][1] == 5'h14) begin // ZRowClone State
+              ideal_rowclone_cycles <= ideal_rowclone_cycles + 10;
+          end
+          if (BankFSM[0][1] == 5'h16) begin // ZLISA State
+              ideal_lisa_cycles <= ideal_lisa_cycles + 1;
+          end
+      end
+  end
+
   // dq, dqs_tp and dqs_cn tristate split as inputs or outputs
   logic [DQWIDTH-1:0] dqi;
   logic [DQWIDTH-1:0] dqo;
