@@ -35,7 +35,7 @@ module Chip
     input logic  [CHWIDTH-1:0]     AmbitOp1RowId     [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     input logic  [CHWIDTH-1:0]     AmbitOp2RowId     [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     input logic  [CHWIDTH-1:0]     AmbitOp3RowId     [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
-    input logic  [0:0]             ambit_en [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
+    input logic  [1:0]             ambit_en [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     input logic  [DEVICE_WIDTH-1:0]dqin    [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic [DEVICE_WIDTH-1:0]dqout   [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     input logic  [CHWIDTH-1:0]     row     [BANKGROUPS-1:0][BANKSPERGROUP-1:0],

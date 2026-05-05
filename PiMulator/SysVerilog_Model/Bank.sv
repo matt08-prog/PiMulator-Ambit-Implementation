@@ -18,7 +18,7 @@ module Bank
   input  logic [CHWIDTH-1:0]      AmbitOp1RowId,     // NEW
   input  logic [CHWIDTH-1:0]      AmbitOp2RowId,     // NEW
   input  logic [CHWIDTH-1:0]      AmbitOp3RowId,     // NEW
-  input  logic [0:0]              ambit_en,
+  input  logic [1:0]              ambit_en,
   input  logic [DEVICE_WIDTH-1:0] dqin,
   output logic [DEVICE_WIDTH-1:0] dqout,
   input  logic [CHWIDTH-1:0]      row,         // This acts as the destination row

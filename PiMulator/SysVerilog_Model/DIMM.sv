@@ -56,6 +56,7 @@ module DIMM // top MEMulator module with DIMM interface
   input logic ck_cn, // Differential clock input complement All address & control signals are sampled at the crossing of negedge of ck_cn
   input logic ck_tp, // Differential clock input true       All address & control signals are sampled at the crossing of posedge of ck_tp
   input logic cke, // Clock Enable; HIGH activates internal clock signals and device input buffers and output drivers
+  input logic ambit_NOT_OP,
   input logic [RANKS-1:0] cs_n, // Chip select; The memory looks at all the other inputs only if this is LOW todo: scale to more ranks
   inout logic [DQWIDTH-1:0] dq, // Data Bus; This is how data is written in and read out
   inout logic [CHIPS-1:0] dqs_cn, // Data Strobe complement (n), essentially a data valid flag
@@ -125,7 +126,7 @@ module DIMM // top MEMulator module with DIMM interface
   logic [ADDRWIDTH-1:0] AmbitOp2RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
   logic [ADDRWIDTH-1:0] AmbitOp3RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
   logic ambit_en [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
-  logic should_enable_ambit [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
+  logic [1:0] should_enable_ambit [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // 0: Not an ambit operation, 1: AND/OR operation, 2: NOT operation
   // CAS = Column Address Strobe
   logic [COLWIDTH-1:0] ColId [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
   // Write Enable bit
@@ -150,6 +151,7 @@ module DIMM // top MEMulator module with DIMM interface
   .cke(cke),
   .cs_n(cs_n[0]), // todo: scale up to more ranks
   .clk(clk),
+  .ambit_NOT_OP(ambit_NOT_OP),
   .bg(bg), .ba(ba),
   .A(A), .RowId(RowId), .SrcRowId(SrcRowId), .AmbitOp1RowId(AmbitOp1RowId), .AmbitOp2RowId(AmbitOp2RowId), .AmbitOp3RowId(AmbitOp3RowId), .should_enable_ambit(should_enable_ambit), .ColId(ColId), .rd_o_wr(rd_o_wr),
   .commands(commands)
@@ -219,7 +221,7 @@ module DIMM // top MEMulator module with DIMM interface
           if (BankFSM[0][1] == 5'h14) begin // ZRowClone State
               ideal_rowclone_cycles <= ideal_rowclone_cycles + 1;
           end
-          if (should_enable_ambit[0][1] == 1'b1) begin // ZAMBIT_OP State
+          if (should_enable_ambit[0][1] != 2'b0) begin // ZAMBIT_OP State
               ideal_ambit_cycles <= ideal_ambit_cycles + 1;
           end
           if (BankFSM[0][1] == 5'h16) begin // ZLISA State
@@ -295,8 +297,32 @@ module DIMM // top MEMulator module with DIMM interface
   endgenerate
 
   // Create an array for AMBIT_en and delay it to wait for Cache Resolution
-  logic [0:0] ambit_en_array [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
-  logic [7:0] amb_delay [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // 8-cycle delay shift register
+  // logic [1:0] ambit_en_array [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
+  // logic [15:0] amb_delay [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // 8-cycle delay shift register
+  
+  // generate
+  //   for (bgi=0; bgi<BANKGROUPS; bgi=bgi+1) begin : AMB_BG
+  //     for (bi=0; bi<BANKSPERGROUP; bi=bi+1) begin : AMB_B
+        
+  //       always_ff @(posedge clk) begin
+  //           if (!reset_n) begin
+  //               amb_delay[bgi][bi] <= 8'b0;
+  //           end else begin
+  //               // Shift the FSM state through the register
+  //               amb_delay[bgi][bi] <= {amb_delay[bgi][bi][13:0], (should_enable_ambit[bgi][bi])};
+  //           end
+  //       end
+        
+  //       // Only assert AMBIT_en to the array AFTER 8 cycles of stable FSM state
+  //       assign ambit_en_array[bgi][bi] = amb_delay[bgi][bi][15:14];
+        
+  //     end
+  //   end
+  // endgenerate
+
+  // Create an array for AMBIT_en and delay it to wait for Cache Resolution
+  logic [1:0] ambit_en_array [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
+  logic [15:0] amb_delay [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // 8-cycle delay shift register
   
   generate
     for (bgi=0; bgi<BANKGROUPS; bgi=bgi+1) begin : AMB_BG
@@ -304,16 +330,20 @@ module DIMM // top MEMulator module with DIMM interface
         
         always_ff @(posedge clk) begin
             if (!reset_n) begin
-                amb_delay[bgi][bi] <= 8'b0;
+                amb_delay[bgi][bi] <= 16'b0;
             end else begin
-                // Shift the FSM state through the register
-                amb_delay[bgi][bi] <= {amb_delay[bgi][bi][6:0], (should_enable_ambit[bgi][bi] == 1'b1)};
+                // FIX: Only shift the AMBIT command into the pipeline if the FSM 
+                // is actively performing a RowClone/AMBIT operation!
+                if (BankFSM[bgi][bi] == 5'h14 || BankFSM[bgi][bi] == 5'h15) begin
+                    amb_delay[bgi][bi] <= {amb_delay[bgi][bi][13:0], should_enable_ambit[bgi][bi]};
+                end else begin
+                    amb_delay[bgi][bi] <= {amb_delay[bgi][bi][13:0], 2'b00};
+                end
             end
         end
         
         // Only assert AMBIT_en to the array AFTER 8 cycles of stable FSM state
-        assign ambit_en_array[bgi][bi] = amb_delay[bgi][bi][7];
-        
+        assign ambit_en_array[bgi][bi] = amb_delay[bgi][bi][15:14];
       end
     end
   endgenerate

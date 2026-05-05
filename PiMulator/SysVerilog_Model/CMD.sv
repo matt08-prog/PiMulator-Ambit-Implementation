@@ -21,6 +21,7 @@ module CMD
     input logic cke, // Clock Enable; HIGH activates internal clock signals and device input buffers and output drivers
     input logic cs_n, // Chip select; The memory looks at all the other inputs only if this is LOW todo: scale to more than 1 rank
     input logic clk,
+    input logic ambit_NOT_OP,
     `ifdef DDR4
     input logic act_n,
     `endif
@@ -37,7 +38,7 @@ module CMD
     output logic [ADDRWIDTH-1:0] AmbitOp1RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
     output logic [ADDRWIDTH-1:0] AmbitOp2RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
     output logic [ADDRWIDTH-1:0] AmbitOp3RowId [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // NEW
-    output logic should_enable_ambit [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
+    output logic [1:0] should_enable_ambit [BANKGROUPS-1:0][BANKSPERGROUP-1:0], // 0: Not an ambit operation, 1: AND/OR operation, 2: NOT operation
     output logic [COLWIDTH-1:0] ColId [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic rd_o_wr [BANKGROUPS-1:0][BANKSPERGROUP-1:0],
     output logic [18:0] commands
@@ -106,7 +107,7 @@ module CMD
                         AmbitOp2RowId[bg][ba] <= T1;
                         AmbitOp3RowId[bg][ba] <= T2;
                         $display("CMD recieved TO_T1_T2 so enabling should_enable_ambit");
-                        should_enable_ambit[bg][ba] <= 1;
+                        should_enable_ambit[bg][ba] <= 2'b1;
                     end
 
                     T1_T2_T3:    begin
@@ -114,7 +115,7 @@ module CMD
                         AmbitOp2RowId[bg][ba] <= T2;
                         AmbitOp3RowId[bg][ba] <= T3;
                         $display("CMD recieved T1_T2_T3 so enabling should_enable_ambit");
-                        should_enable_ambit[bg][ba] <= 1;
+                        should_enable_ambit[bg][ba] <= 2'b1;
                     end
 
                     DCC0_T1_T2:    begin
@@ -122,7 +123,7 @@ module CMD
                         AmbitOp2RowId[bg][ba] <= T1;
                         AmbitOp3RowId[bg][ba] <= T2;
                         $display("CMD recieved DCC0_T1_T2 so enabling should_enable_ambit");
-                        should_enable_ambit[bg][ba] <= 1;
+                        should_enable_ambit[bg][ba] <= 2'b1;
                     end
 
                     DCC1_T0_T3:    begin
@@ -130,14 +131,36 @@ module CMD
                         AmbitOp2RowId[bg][ba] <= T0;
                         AmbitOp3RowId[bg][ba] <= T3;
                         $display("CMD recieved DCC1_T0_T3 so enabling should_enable_ambit");
-                        should_enable_ambit[bg][ba] <= 1;
+                        should_enable_ambit[bg][ba] <= 2'b1;
                     end
 
+                    // n_DCC0: begin
+                    //     if (ambit_NOT_OP == 1'b1) begin
+                    //         AmbitOp1RowId[bg][ba] <= n_DCC0;
+                    //         AmbitOp2RowId[bg][ba] <= 0;
+                    //         AmbitOp3RowId[bg][ba] <= 0;
+                    //         should_enable_ambit[bg][ba] <= 2'd2;
+                    //     end else begin
+                    //         AmbitOp1RowId[bg][ba] <= 0;
+                    //         AmbitOp2RowId[bg][ba] <= 0;
+                    //         AmbitOp3RowId[bg][ba] <= 0;
+                    //         should_enable_ambit[bg][ba] <= 0;
+                    //     end
+                    // end
+
                     default: begin
-                        AmbitOp1RowId[bg][ba] <= 0;
-                        AmbitOp2RowId[bg][ba] <= 0;
-                        AmbitOp3RowId[bg][ba] <= 0;
-                        should_enable_ambit[bg][ba] <= 0;
+                        if (ambit_NOT_OP == 1'b1 && A == n_DCC0) begin
+                            AmbitOp1RowId[bg][ba] <= n_DCC0; // Pass the destination down to be cached
+                            AmbitOp2RowId[bg][ba] <= 0;
+                            AmbitOp3RowId[bg][ba] <= 0;
+                            should_enable_ambit[bg][ba] <= 2'd2;
+                            $display("CMD received n_DCC0 as destination, enabling NOT operation");
+                        end else begin
+                            AmbitOp1RowId[bg][ba] <= 0;
+                            AmbitOp2RowId[bg][ba] <= 0;
+                            AmbitOp3RowId[bg][ba] <= 0;
+                            should_enable_ambit[bg][ba] <= 0;
+                        end
                     end
                 endcase
 

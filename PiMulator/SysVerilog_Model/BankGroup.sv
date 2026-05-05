@@ -21,7 +21,7 @@ module BankGroup
     input logic  [CHWIDTH-1:0]     AmbitOp1RowId     [BANKSPERGROUP-1:0],
     input logic  [CHWIDTH-1:0]     AmbitOp2RowId     [BANKSPERGROUP-1:0],
     input logic  [CHWIDTH-1:0]     AmbitOp3RowId     [BANKSPERGROUP-1:0],
-    input logic  [0:0]             ambit_en [BANKSPERGROUP-1:0],
+    input logic  [1:0]             ambit_en [BANKSPERGROUP-1:0],
     input logic  [DEVICE_WIDTH-1:0]dqin    [BANKSPERGROUP-1:0],
     output logic [DEVICE_WIDTH-1:0]dqout   [BANKSPERGROUP-1:0],
     input logic  [CHWIDTH-1:0]     row     [BANKSPERGROUP-1:0],

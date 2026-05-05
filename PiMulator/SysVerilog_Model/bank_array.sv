@@ -18,7 +18,7 @@ module bank_array #(
     input logic [CHWIDTH-1:0] AmbitOp1RowId, // AMBIT: acts as Operand 1 
     input logic [CHWIDTH-1:0] AmbitOp2RowId, // AMBIT: acts as Operand 2
     input logic [CHWIDTH-1:0] AmbitOp3RowId, // AMBIT: acts as Operand 3 
-    input logic ambit_en,             // NEW: Trigger the copy
+    input logic [1:0] ambit_en,             // NEW: Trigger the copy
     input logic [WIDTH-1:0] i_data, 
     output logic [WIDTH-1:0] o_data 
 );
@@ -36,7 +36,7 @@ module bank_array #(
     `endif
     
     always @ (posedge clk) begin
-        if (ambit_en) begin
+        if (ambit_en == 2'd1) begin
                 if (virt_src_row == T0_T1_T2 || virt_src_row == T1_T2_T3 || virt_src_row == DCC0_T1_T2 || virt_src_row == DCC1_T0_T3) begin
                     for (int c = 0; c < (1<<COLWIDTH); c++) begin
                         
@@ -61,6 +61,33 @@ module bank_array #(
                         end
                     end
                 end
+        end else if (ambit_en == 2'd2) begin
+            for (int c = 0; c < (1<<COLWIDTH); c++) begin
+                // memory_array[{src_row[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= 
+                //         ~memory_array[{addr, c[COLWIDTH-1:0]}];
+                memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= 
+                        ~memory_array[{src_row, c[COLWIDTH-1:0]}];
+                if (c == 0) begin
+                    $display("BANK ARRAY - OK: AMBITing NOT row %d to (cached) row address %d", virt_src_row, AmbitOp1RowId);
+                end
+                
+                // // Check if T2 (AmbitOp3) is initialized to 0 for this specific column
+                // if (|memory_array[{AmbitOp3RowId, c[COLWIDTH-1:0]}] == 0) begin
+                //     // AND operation
+                //     memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= 
+                //         memory_array[{AmbitOp1RowId, c[COLWIDTH-1:0]}] & 
+                //         memory_array[{AmbitOp2RowId, c[COLWIDTH-1:0]}];
+                // end 
+                // else begin
+                //     // if (c == 0) begin
+                //     //     $display("BANK ARRAY - OK: AMBITing OR row %d to row address %d into row %d", AmbitOp1RowId, AmbitOp2RowId, addr);
+                //     // end
+                //     // OR operation
+                //     memory_array[{addr[$clog2(DEPTH)-1 : COLWIDTH], c[COLWIDTH-1:0]}] <= 
+                //         memory_array[{AmbitOp1RowId, c[COLWIDTH-1:0]}] | 
+                //         memory_array[{AmbitOp2RowId, c[COLWIDTH-1:0]}];
+                // end
+            end
         end else if (rowclone_en) begin
             // NEW: Bulk copy the entire row in simulation.
             // Note: This works perfectly in ModelSim emulation, but for actual FPGA 

@@ -45,10 +45,12 @@ module testbnch_DIMM();
     // AMBIT parameters
     localparam row_address_A = 956;
     localparam row_address_B = 220;
+    localparam row_address_C = 644;
     localparam ambit_result_row = 333;
 
     logic reset_n;
     logic RBM;
+    logic ambit_NOT_OP;
     logic ck2x;
     logic ck_cn;
     logic ck_tp;
@@ -98,6 +100,7 @@ module testbnch_DIMM();
     ) dut (
     .reset_n(reset_n),
     .RBM(RBM),
+    .ambit_NOT_OP(ambit_NOT_OP),
     .ck2x(ck2x),
     .ck_cn(ck_cn),
     .ck_tp(ck_tp),
@@ -138,6 +141,17 @@ module testbnch_DIMM();
     logic [DQWIDTH-1:0] expected_data_A [0:BL-1];
     logic [DQWIDTH-1:0] expected_data_B [0:BL-1];
     logic [DQWIDTH-1:0] expected_data_C [0:BL-1];
+
+    logic [DQWIDTH-1:0] expected_data_D [0:BL-1] = {
+        64'hfccccccccccccccc,
+        64'h0000000000000000,
+        64'hfccccccccccffccc,
+        64'hfcccccbbcccccccc,
+        64'hfccccccccccccccc,
+        64'hfcc345aacccccccc,
+        64'hfccccccccccccccc,
+        64'hfcccccccc345678c
+    };
 
     logic [DQWIDTH-1:0] test_data_all_0s [0:BL-1] = {
         64'h0000000000000000,
@@ -186,6 +200,7 @@ module testbnch_DIMM();
     logic [DQWIDTH-1:0] operand_A_AND_operand_B_test_result [0:BL-1];
     logic [DQWIDTH-1:0] operand_A_OR_operand_B_test_result [0:BL-1];
 
+    logic [DQWIDTH-1:0] expected_data_D_inverted [0:BL-1];
     // Bitwise AND operation
     always_comb begin
         foreach (operand_A_AND_operand_B_test_result[i]) begin
@@ -196,6 +211,12 @@ module testbnch_DIMM();
     always_comb begin
         foreach (operand_A_OR_operand_B_test_result[i]) begin
             operand_A_OR_operand_B_test_result[i] = operand_A_test_data[i] | operand_B_test_data[i];
+        end
+    end
+    // Bitwise NOT operation
+    always_comb begin
+        foreach (expected_data_D_inverted[i]) begin
+            expected_data_D_inverted[i] = ~expected_data_D[i];
         end
     end
 
@@ -357,6 +378,18 @@ module testbnch_DIMM();
     endtask
 
     task trigger_ambit_operation(input [ADDRWIDTH-1:0] B_GroupAddress, input [ADDRWIDTH-1:0] Data_GroupAddress);
+        activate_row(B_GroupAddress);
+        trigger_rowclone(Data_GroupAddress);
+        precharge_bank();
+    endtask
+
+    task trigger_ambit_NOT_operation(input [ADDRWIDTH-1:0] B_GroupAddress, input [ADDRWIDTH-1:0] Data_GroupAddress);
+        ambit_NOT_OP = 1'b1;
+        activate_row(Data_GroupAddress);
+        trigger_rowclone(B_GroupAddress);
+        precharge_bank();
+        ambit_NOT_OP = 1'b0;
+        
         activate_row(B_GroupAddress);
         trigger_rowclone(Data_GroupAddress);
         precharge_bank();
@@ -575,6 +608,26 @@ module testbnch_DIMM();
         
         read_row_data_and_verify_expected_result(17'd1, expected_data_A);
         read_row_data_and_verify_expected_result(17'd3, expected_data_A);
+
+        // ==========================================
+        // 8. Ambit NOT operation test
+        // ==========================================
+        // To perform a bitwise NOT of row A and store the result in row R, the Ambit
+        // controller performs the following steps.
+        // 1. Activate row A
+        // 2. Activate n-wordline of DCC (address B5)
+        // 3. Precharge the bank.
+        // 4. Copy data from d-wordline of DCC to row R (RowClone)
+
+        // T2 initialized to all 0s to perform AND operation on T0 and T1
+        write_data_to_row(row_address_C, expected_data_D);
+
+        precharge_bank();
+        // Activate designated rows T0, T1, and T2 simultaneously
+        trigger_ambit_NOT_operation(n_DCC0, row_address_C);
+
+        read_row_data_and_verify_expected_result(n_DCC0, expected_data_D_inverted);
+        read_row_data_and_verify_expected_result(row_address_C, expected_data_D_inverted);
 
         // precharge and back to idle
         ba = 1;
