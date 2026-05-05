@@ -590,9 +590,10 @@ module testbnch_DIMM();
 
         $display("total number of clockcycles after a rowclone transfer, three AMBIT operations, and a LISA subarray movement test: %d", dut.ideal_total_cycles);
         $display("======= Number of cycles within the RowClone state within that time: %d", dut.ideal_rowclone_cycles);
+        $display("======= Number of cycles within the AMBIT Operation state within that time: %d", dut.ideal_ambit_cycles);
         $display("======= Number of cycles while in LISA's RBM state within that time: %d", dut.ideal_lisa_cycles);
         
-        
+
         
         $stop();
     end;

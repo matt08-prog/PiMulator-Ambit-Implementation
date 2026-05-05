@@ -202,12 +202,14 @@ module DIMM // top MEMulator module with DIMM interface
   // IDEAL DRAM PERFORMANCE PROFILER
   logic [63:0] ideal_total_cycles;
   logic [63:0] ideal_rowclone_cycles;
+  logic [63:0] ideal_ambit_cycles;
   logic [63:0] ideal_lisa_cycles;
 
   always_ff @(posedge clk) begin
       if (!reset_n) begin
           ideal_total_cycles <= 0;
           ideal_rowclone_cycles <= 0;
+          ideal_ambit_cycles <= 0;
           ideal_lisa_cycles <= 0;
       end 
       // ONLY COUNT WHEN THE EMULATOR IS NOT STALLED!
@@ -215,7 +217,10 @@ module DIMM // top MEMulator module with DIMM interface
           ideal_total_cycles <= ideal_total_cycles + 1;
           
           if (BankFSM[0][1] == 5'h14) begin // ZRowClone State
-              ideal_rowclone_cycles <= ideal_rowclone_cycles + 10;
+              ideal_rowclone_cycles <= ideal_rowclone_cycles + 1;
+          end
+          if (should_enable_ambit[0][1] == 1'b1) begin // ZAMBIT_OP State
+              ideal_ambit_cycles <= ideal_ambit_cycles + 1;
           end
           if (BankFSM[0][1] == 5'h16) begin // ZLISA State
               ideal_lisa_cycles <= ideal_lisa_cycles + 1;
