@@ -48,7 +48,7 @@ module testbnch_DIMM();
     localparam row_address_C = 644;
     localparam ambit_result_row = 333;
 
-    // Addresses for AMBIT addition test
+    // Addresses for AMBIT XOR test
     localparam row_address_NOT_A = 360;
     localparam row_address_NOT_B = 370;
     localparam row_address_A_AND_NOT_B = 400;
@@ -263,7 +263,7 @@ module testbnch_DIMM();
     end
 
 
-    // 1. Activate a Row (Must be act_n = 0)
+    // Activate a Row (Must be act_n = 0)
     task activate_row(input [ADDRWIDTH-1:0] row_address);
         act_n = 0; // MUST be 0 to activate!
         A = row_address;
@@ -279,7 +279,7 @@ module testbnch_DIMM();
         #(tCK*T_CL); // FIX: Wait for the FSM's post-activation cooldown timer!
     endtask
 
-    // 2. Precharge a Bank (Close the active row)
+    // Precharge a Bank (Close the active row)
     task precharge_bank();
         act_n = 1;
         A = 17'b01000000000000000; // PR Command pattern
@@ -290,7 +290,7 @@ module testbnch_DIMM();
         #((T_RP-1)*tCK); // Wait for row to close
     endtask
 
-    // 3. Write Data (Pass the array by reference so we can save it!)
+    // Write Data (Pass the array by reference so we can save it!)
     task write_rand_data(input [ADDRWIDTH-1:0] row_address, output logic [DQWIDTH-1:0] saved_data [0:BL-1]);
         activate_row(row_address);
         
@@ -315,7 +315,7 @@ module testbnch_DIMM();
         #(tCK*(T_ABA-BL+4)); // Wait out the burst
     endtask
 
-    // 3.5. Write Data (Pass the array by reference so we can save it!)
+    // Write Data (Pass the array by reference so we can save it!)
     task write_data_to_row(input [ADDRWIDTH-1:0] row_address, input logic [DQWIDTH-1:0] data_to_write [0:BL-1]);
         activate_row(row_address);
         
@@ -426,18 +426,6 @@ module testbnch_DIMM();
         precharge_bank();
     endtask
 
-    // task trigger_ambit_NOT_operation(input [ADDRWIDTH-1:0] B_GroupAddress, input [ADDRWIDTH-1:0] Data_GroupAddress);
-    //     ambit_NOT_OP = 1'b1;
-    //     activate_row(Data_GroupAddress);
-    //     trigger_rowclone(B_GroupAddress);
-    //     precharge_bank();
-    //     ambit_NOT_OP = 1'b0;
-        
-    //     activate_row(B_GroupAddress);
-    //     trigger_rowclone(Data_GroupAddress);
-    //     precharge_bank();
-    // endtask
-
     task trigger_ambit_NOT_operation(input [ADDRWIDTH-1:0] B_GroupAddress, input [ADDRWIDTH-1:0] Data_GroupAddress, input [ADDRWIDTH-1:0] target_address);
         ambit_NOT_OP = 1'b1;
         activate_row(Data_GroupAddress);
@@ -502,7 +490,7 @@ module testbnch_DIMM();
         precharge_bank(); // MUST CLOSE BEFORE OPENING ROW 8!
 
         // ==========================================
-        // 3. Write Data B to Row 8
+        // 2. Write Data B to Row 8
         // ==========================================
         write_rand_data(17'd8, expected_data_B);
         precharge_bank(); // MUST CLOSE BEFORE OPENING ROW 32!
@@ -522,15 +510,9 @@ module testbnch_DIMM();
         `endif
 
         precharge_bank(); // CLOSE AFTER  ROWCLONE!
-        // At this point, Row 4 is the currently active row. 
-        // You can now proceed directly to your `RD` command loop 
-        // and check `dq` against `expected_data_A`!
-        
+
         read_row_data_and_verify_expected_result(17'd4, expected_data_A);
         read_row_data_and_verify_expected_result(17'd8, expected_data_B);
-        
-        
-        
 
         // ==========================================
         // 5. Ambit AND operation test using BITWISE_GROUP T0_T1_T2

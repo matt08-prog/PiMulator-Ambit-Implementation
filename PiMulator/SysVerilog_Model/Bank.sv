@@ -12,12 +12,12 @@ module Bank
   (
   input  logic clk,
   input  logic [0:0]              rd_o_wr,
-  input  logic                    rowclone_en, // NEW
-  input  logic [CHWIDTH-1:0]      src_row,     // NEW
-  input  logic [16:0]             virt_src_row, // NEW
-  input  logic [CHWIDTH-1:0]      AmbitOp1RowId,     // NEW
-  input  logic [CHWIDTH-1:0]      AmbitOp2RowId,     // NEW
-  input  logic [CHWIDTH-1:0]      AmbitOp3RowId,     // NEW
+  input  logic                    rowclone_en,
+  input  logic [CHWIDTH-1:0]      src_row,
+  input  logic [16:0]             virt_src_row,
+  input  logic [CHWIDTH-1:0]      AmbitOp1RowId,
+  input  logic [CHWIDTH-1:0]      AmbitOp2RowId,
+  input  logic [CHWIDTH-1:0]      AmbitOp3RowId,
   input  logic [1:0]              ambit_en,
   input  logic [DEVICE_WIDTH-1:0] dqin,
   output logic [DEVICE_WIDTH-1:0] dqout,
@@ -32,14 +32,14 @@ module Bank
             bank_array #(
                 .WIDTH(DEVICE_WIDTH), 
                 .DEPTH(DEPTH), 
-                .COLWIDTH(COLWIDTH),   // NEW
-                .CHWIDTH(CHWIDTH)      // NEW
+                .COLWIDTH(COLWIDTH),
+                .CHWIDTH(CHWIDTH)
             ) arrayi (
                 .clk(clk),
                 .addr({row, column}),
                 .rd_o_wr(rd_o_wr), 
-                .rowclone_en(rowclone_en), // NEW
-                .src_row(src_row),         // NEW
+                .rowclone_en(rowclone_en),
+                .src_row(src_row),
                 .virt_src_row(virt_src_row),
                 .AmbitOp1RowId(AmbitOp1RowId),
                 .AmbitOp2RowId(AmbitOp2RowId),

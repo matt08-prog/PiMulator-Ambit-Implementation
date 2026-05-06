@@ -297,30 +297,6 @@ module DIMM // top MEMulator module with DIMM interface
   endgenerate
 
   // Create an array for AMBIT_en and delay it to wait for Cache Resolution
-  // logic [1:0] ambit_en_array [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
-  // logic [15:0] amb_delay [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // 8-cycle delay shift register
-  
-  // generate
-  //   for (bgi=0; bgi<BANKGROUPS; bgi=bgi+1) begin : AMB_BG
-  //     for (bi=0; bi<BANKSPERGROUP; bi=bi+1) begin : AMB_B
-        
-  //       always_ff @(posedge clk) begin
-  //           if (!reset_n) begin
-  //               amb_delay[bgi][bi] <= 8'b0;
-  //           end else begin
-  //               // Shift the FSM state through the register
-  //               amb_delay[bgi][bi] <= {amb_delay[bgi][bi][13:0], (should_enable_ambit[bgi][bi])};
-  //           end
-  //       end
-        
-  //       // Only assert AMBIT_en to the array AFTER 8 cycles of stable FSM state
-  //       assign ambit_en_array[bgi][bi] = amb_delay[bgi][bi][15:14];
-        
-  //     end
-  //   end
-  // endgenerate
-
-  // Create an array for AMBIT_en and delay it to wait for Cache Resolution
   logic [1:0] ambit_en_array [BANKGROUPS-1:0][BANKSPERGROUP-1:0];
   logic [15:0] amb_delay [BANKGROUPS-1:0][BANKSPERGROUP-1:0]; // 8-cycle delay shift register
   
@@ -332,7 +308,7 @@ module DIMM // top MEMulator module with DIMM interface
             if (!reset_n) begin
                 amb_delay[bgi][bi] <= 16'b0;
             end else begin
-                // FIX: Only shift the AMBIT command into the pipeline if the FSM 
+                // Only shift the AMBIT command into the pipeline if the FSM 
                 // is actively performing a RowClone/AMBIT operation!
                 if (BankFSM[bgi][bi] == 5'h14 || BankFSM[bgi][bi] == 5'h15) begin
                     amb_delay[bgi][bi] <= {amb_delay[bgi][bi][13:0], should_enable_ambit[bgi][bi]};
@@ -364,9 +340,9 @@ module DIMM // top MEMulator module with DIMM interface
         .clk(clk),
         // all the information on the data bus is in these wire bundles below
         .rd_o_wr(rd_o_wr),
-        .rowclone_en(rowclone_en_array), // FIX: Pass array
-        .src_row(cSrcRowId),             // FIX: Pass array (Was missing!)
-        .virt_src_row(SrcRowId), // NEW: Route the 17-bit address straight from CMD!
+        .rowclone_en(rowclone_en_array),
+        .src_row(cSrcRowId),
+        .virt_src_row(SrcRowId), // Route the 17-bit address directly from CMD
         .AmbitOp1RowId(cAmbitOp1RowId),
         .AmbitOp2RowId(cAmbitOp2RowId),
         .AmbitOp3RowId(cAmbitOp3RowId),

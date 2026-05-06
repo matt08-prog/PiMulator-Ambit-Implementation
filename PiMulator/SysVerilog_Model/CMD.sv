@@ -52,12 +52,10 @@ module CMD
     // - - and CAS - Column Address Strobe (A0-A9 used for column at this times)
     // A10 which is an unused bit during CAS is overloaded to indicate Auto-Precharge
     logic A16, A15, A14, A10;
-    logic A11;
     assign A16 = A[ADDRWIDTH-1]; // RAS_n
     assign A15 = A[ADDRWIDTH-2]; // CAS_n
     assign A14 = A[ADDRWIDTH-3]; // WE_n
     assign A10 = A[ADDRWIDTH-4]; // AP
-    assign A11 = A[ADDRWIDTH-5]; // Usually unused. Now acts as RPM_en for LISA
     
     logic ACT, BST, CFG, CKEH, CKEL, DPD, DPDX, MRR, MRW, PD, PDX, PR, PRA, RD, RDA, REF, SRF, WR, WRA;
     // logic RBM;
@@ -75,7 +73,6 @@ module CMD
     assign PD   = 0;
     assign PDX  = 0;
     assign PR   = (!cs_n && act_n && !A16 &&  A15 && !A14 && !A10); // PRE
-    // assign RBM  = (!cs_n && act_n && !A16 &&  A15 && !A14 && !A10 &&  A11); // NEW LISA RBM Command (Precharge pattern + A11 HIGH)
     assign PRA  = (!cs_n && act_n && !A16 &&  A15 && !A14 &&  A10); // PREA Precharge all Banks
     assign RD   = (!cs_n && act_n &&  A16 && !A15 &&  A14 && !A10);
     assign RDA  = (!cs_n && act_n &&  A16 && !A15 &&  A14 &&  A10);
@@ -93,14 +90,12 @@ module CMD
     always@(posedge clk)
     begin
         if(ACT) begin 
-            // keep track of active row two activations ago
-            // AmbitOp1RowId[bg][ba] <= SrcRowId[bg][ba];
 
-            // NEW: Keep track of the previously active row as the source
+            // Keep track of the previously active row as the source
             SrcRowId[bg][ba] <= RowId[bg][ba];
             // Update the current active row to the destination
-            // TODO: This is where it should be determined if this is a simple row activation or tripple row activation (AMBIT operation if address is in B_12:B15)
-            // TODO: Based on that determination, an AMBIT_en signal should be enabled
+            // This is where it is determined if this is a simple row activation or tripple row activation (AMBIT operation if address is in range B_12-B_15)
+            // Based on that determination, an AMBIT_en signal is enabled
             case (RowId[bg][ba])
                     T0_T1_T2:    begin
                         AmbitOp1RowId[bg][ba] <= T0;
@@ -134,23 +129,9 @@ module CMD
                         should_enable_ambit[bg][ba] <= 2'b1;
                     end
 
-                    // n_DCC0: begin
-                    //     if (ambit_NOT_OP == 1'b1) begin
-                    //         AmbitOp1RowId[bg][ba] <= n_DCC0;
-                    //         AmbitOp2RowId[bg][ba] <= 0;
-                    //         AmbitOp3RowId[bg][ba] <= 0;
-                    //         should_enable_ambit[bg][ba] <= 2'd2;
-                    //     end else begin
-                    //         AmbitOp1RowId[bg][ba] <= 0;
-                    //         AmbitOp2RowId[bg][ba] <= 0;
-                    //         AmbitOp3RowId[bg][ba] <= 0;
-                    //         should_enable_ambit[bg][ba] <= 0;
-                    //     end
-                    // end
-
                     default: begin
                         if (ambit_NOT_OP == 1'b1 && A == n_DCC0) begin
-                            AmbitOp1RowId[bg][ba] <= n_DCC0; // Pass the destination down to be cached
+                            AmbitOp1RowId[bg][ba] <= n_DCC0;
                             AmbitOp2RowId[bg][ba] <= 0;
                             AmbitOp3RowId[bg][ba] <= 0;
                             should_enable_ambit[bg][ba] <= 2'd2;

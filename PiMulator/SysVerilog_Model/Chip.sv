@@ -54,9 +54,9 @@ module Chip
             .BANKARRAYSPERBANK(BANKARRAYSPERBANK)) BGi (
             .clk(clk),
             .rd_o_wr(rd_o_wr[bgi]),
-            .rowclone_en(rowclone_en[bgi]), // FIX: Added [bgi] slice
-            .src_row(src_row[bgi]),         // FIX: Renamed and added [bgi] slice
-            .virt_src_row(virt_src_row[bgi]), // NEW
+            .rowclone_en(rowclone_en[bgi]),
+            .src_row(src_row[bgi]),
+            .virt_src_row(virt_src_row[bgi]),
             .AmbitOp1RowId(AmbitOp1RowId[bgi]),
             .AmbitOp2RowId(AmbitOp2RowId[bgi]),
             .AmbitOp3RowId(AmbitOp3RowId[bgi]),
